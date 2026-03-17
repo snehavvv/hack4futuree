@@ -7,16 +7,31 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Node / Vite
+node_modules/
+dist/
+dist-ssr/
 *.local
+.env
 
-# Editor directories and files
+# Editor / IDE
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
+*.iml
+
+# OS files
 .DS_Store
+
+# Build / Android / Misc (from remote)
+.gradle
+/local.properties
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Visual Studio
 *.suo
 *.ntvs*
 *.njsproj
