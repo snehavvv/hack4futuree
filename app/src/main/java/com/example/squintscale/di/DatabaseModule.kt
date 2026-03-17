@@ -3,9 +3,7 @@ package com.example.squintscale.di
 import android.content.Context
 import androidx.room.Room
 import com.example.squintscale.data.local.AppDatabase
-import com.example.squintscale.data.local.dao.AnalyticsEntryDao
-import com.example.squintscale.data.local.dao.ReadingSessionDao
-import com.example.squintscale.data.local.dao.UserProfileDao
+import com.example.squintscale.data.local.dao.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,4 +33,7 @@ object DatabaseModule {
 
     @Provides
     fun provideAnalyticsEntryDao(database: AppDatabase): AnalyticsEntryDao = database.analyticsEntryDao
+
+    @Provides
+    fun provideHistoryDao(database: AppDatabase): HistoryDao = database.historyDao
 }

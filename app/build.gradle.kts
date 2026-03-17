@@ -101,6 +101,8 @@ dependencies {
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
+    
+    implementation(libs.jsoup)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

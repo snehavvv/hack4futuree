@@ -33,8 +33,14 @@ fun ProcessingScreen(
     }
 
     LaunchedEffect(uiState.isComplete) {
-        if (uiState.isComplete && uiState.resultSessionId != null) {
-            navController.navigate(Screen.Reading.createRoute(uiState.resultSessionId.toString())) {
+        if (uiState.isComplete) {
+            navController.navigate(
+                Screen.Reading.createRoute(
+                    text = uiState.processedText,
+                    title = uiState.processedTitle,
+                    source = "OCR"
+                )
+            ) {
                 popUpTo(Screen.Processing.route) { inclusive = true }
             }
         }

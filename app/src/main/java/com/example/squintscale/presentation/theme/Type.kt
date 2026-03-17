@@ -15,19 +15,17 @@ val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-val OutfitFont = FontFamily(
-    Font(googleFont = GoogleFont("Outfit"), fontProvider = provider)
+val LexendFont = FontFamily(
+    Font(googleFont = GoogleFont("Lexend"), fontProvider = provider)
 )
 
 val InterFont = FontFamily(
     Font(googleFont = GoogleFont("Inter"), fontProvider = provider)
 )
 
-val LexendFont = FontFamily(
-    Font(googleFont = GoogleFont("Lexend"), fontProvider = provider)
+val OutfitFont = FontFamily(
+    Font(googleFont = GoogleFont("Outfit"), fontProvider = provider)
 )
-
-val OpenDyslexicFont = FontFamily.Default // Simplified for now, would typically use local font file
 
 val Typography = Typography(
     displayLarge = TextStyle(
@@ -51,20 +49,18 @@ val Typography = Typography(
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),
+    bodyMedium = TextStyle(
+        fontFamily = InterFont,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        letterSpacing = 0.25.sp
+    ),
     labelMedium = TextStyle(
         fontFamily = InterFont,
         fontWeight = FontWeight.Medium,
         fontSize = 12.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.5.sp
-    )
-)
-
-val ReadingTypography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = LexendFont,
-        fontWeight = FontWeight.Normal,
-        fontSize = 20.sp,
-        lineHeight = 30.sp
     )
 )

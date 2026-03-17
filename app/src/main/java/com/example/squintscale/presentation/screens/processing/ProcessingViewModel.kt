@@ -27,6 +27,8 @@ data class ProcessingUiState(
     val progress: Float = 0f,
     val isComplete: Boolean = false,
     val resultSessionId: Int? = null,
+    val processedText: String = "",
+    val processedTitle: String = "",
     val error: String? = null
 )
 
@@ -58,8 +60,9 @@ class ProcessingViewModel @Inject constructor(
                 val userProfile = userProfileDao.getUserProfile().first()
                 val score = squintScoreCalculator.compute(ocrResult, geminiResponse)
                 
+                val sessionTitle = "New Reading Session"
                 val session = ReadingSessionEntity(
-                    title = "New Reading Session",
+                    title = sessionTitle,
                     content = ocrResult.fullText,
                     startTime = System.currentTimeMillis(),
                     endTime = 0,
@@ -75,7 +78,9 @@ class ProcessingViewModel @Inject constructor(
                     statusMessage = "Optimizing for comfort...", 
                     progress = 1.0f,
                     isComplete = true,
-                    resultSessionId = savedSession?.id
+                    resultSessionId = savedSession?.id,
+                    processedText = ocrResult.fullText,
+                    processedTitle = sessionTitle
                 ) }
                 
             } catch (e: Exception) {

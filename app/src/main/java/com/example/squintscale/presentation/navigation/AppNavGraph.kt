@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.squintscale.presentation.screens.analytics.AnalyticsScreen
 import com.example.squintscale.presentation.screens.calibration.CalibrationScreen
+import com.example.squintscale.presentation.screens.history.HistoryScreen
 import com.example.squintscale.presentation.screens.home.HomeScreen
 import com.example.squintscale.presentation.screens.input.InputScreen
 import com.example.squintscale.presentation.screens.onboarding.OnboardingScreen
@@ -39,20 +40,32 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.Processing.route,
-            arguments = listOf(navArgument("content") { type = NavType.StringType })
+            arguments = listOf(navArgument("content") { 
+                type = NavType.StringType
+                nullable = true
+            })
         ) { backStackEntry ->
             val content = backStackEntry.arguments?.getString("content") ?: ""
             ProcessingScreen(navController = navController, contentUri = content)
         }
         composable(
             route = Screen.Reading.route,
-            arguments = listOf(navArgument("result") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("text") { type = NavType.StringType; defaultValue = "" },
+                navArgument("title") { type = NavType.StringType; defaultValue = "Reading" },
+                navArgument("source") { type = NavType.StringType; defaultValue = "MANUAL" }
+            )
         ) { backStackEntry ->
-            val sessionId = backStackEntry.arguments?.getString("result") ?: ""
-            ReadingScreen(navController = navController, sessionId = sessionId)
+            val text = backStackEntry.arguments?.getString("text") ?: ""
+            val title = backStackEntry.arguments?.getString("title") ?: "Reading"
+            val source = backStackEntry.arguments?.getString("source") ?: "MANUAL"
+            ReadingScreen(navController = navController, text = text, title = title, sourceType = source)
         }
         composable(Screen.Analytics.route) {
             AnalyticsScreen(navController = navController)
+        }
+        composable(Screen.History.route) {
+            HistoryScreen(navController = navController)
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController = navController)
