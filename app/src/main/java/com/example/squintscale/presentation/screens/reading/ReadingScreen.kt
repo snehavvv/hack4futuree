@@ -1,7 +1,6 @@
 package com.example.squintscale.presentation.screens.reading
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,7 +9,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.AutoAwesome
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -134,7 +132,7 @@ fun ReadingScreen(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
                     contentPadding = PaddingValues(top = 16.dp, bottom = 150.dp)
                 ) {
-                    itemsIndexed(paragraphs) { index, paragraph ->
+                    itemsIndexed(paragraphs) { _, paragraph ->
                         ReadingTextBlock(
                             text = paragraph,
                             fontSize = uiState.fontSize,
@@ -283,7 +281,7 @@ fun ReadingControls(
             
             Spacer(modifier = Modifier.height(8.dp))
             LinearProgressIndicator(
-                progress = uiState.readingProgress,
+                progress = { uiState.readingProgress },
                 modifier = Modifier.fillMaxWidth().height(4.dp),
                 color = SoftPurple,
                 trackColor = BackgroundDark
@@ -308,7 +306,7 @@ fun SuggestionCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.AutoMirrored.Filled.AutoAwesome, contentDescription = null, tint = Color.White)
+            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color.White)
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "AI Suggestion", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f))

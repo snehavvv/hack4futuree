@@ -68,8 +68,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.material)
-    implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.compose.ui.text.google.fonts)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.compose.ui.text.google.fonts)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
@@ -90,14 +90,14 @@ dependencies {
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.extensions)
 
-    implementation(libs.mlkitTextRecognition)
-    implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.mlkit.text.recognition)
+    implementation(libs.play.services.coroutines)
 
     implementation(libs.generativeai)
 
-    implementation(libs.vicoCompose)
-    implementation(libs.vicoComposeM3)
-    implementation(libs.vicoCore)
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
 
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
