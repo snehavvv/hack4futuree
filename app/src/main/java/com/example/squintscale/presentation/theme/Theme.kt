@@ -16,38 +16,38 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = SoftPurple,
-    secondary = AccentGreen,
-    tertiary = WarningOrange,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    onPrimary = TextPrimary,
-    onSecondary = BackgroundDark,
-    onTertiary = BackgroundDark,
-    onBackground = TextPrimary,
-    onSurface = TextPrimary,
+    primary = MediumPepper,
+    secondary = LightPepper,
+    tertiary = SaltWhite,
+    background = CoalBlack,
+    surface = DarkPepper,
+    onPrimary = CoalBlack,
+    onSecondary = CoalBlack,
+    onTertiary = CoalBlack,
+    onBackground = SaltWhite,
+    onSurface = SaltWhite,
     error = ErrorRed
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = SoftPurple,
-    secondary = AccentGreen,
-    tertiary = WarningOrange,
-    background = BackgroundLight,
-    surface = SurfaceLight,
-    onPrimary = TextPrimary,
-    onSecondary = BackgroundDark,
-    onTertiary = BackgroundDark,
-    onBackground = TextPrimaryLight,
-    onSurface = TextPrimaryLight,
+    primary = DarkPepper,
+    secondary = MediumPepper,
+    tertiary = CoalBlack,
+    background = SaltWhite,
+    surface = LightPepper,
+    onPrimary = SaltWhite,
+    onSecondary = SaltWhite,
+    onTertiary = SaltWhite,
+    onBackground = CoalBlack,
+    onSurface = CoalBlack,
     error = ErrorRed
 )
 
 @Composable
 fun SquintScaleTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = false, // Force light theme as requested
+    // Set dynamicColor to false to prioritize the Salt and Pepper theme
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

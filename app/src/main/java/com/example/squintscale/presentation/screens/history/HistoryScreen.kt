@@ -32,23 +32,16 @@ fun HistoryScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        containerColor = BackgroundDark,
         topBar = {
             TopAppBar(
-                title = { Text("Reading History", color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = TextPrimary)
-                    }
-                },
+                title = { Text("Reading History") },
                 actions = {
                     if (uiState.historyItems.isNotEmpty()) {
                         IconButton(onClick = viewModel::clearAll) {
-                            Icon(Icons.Default.Delete, "Clear All", tint = ErrorRed)
+                            Icon(Icons.Default.Delete, "Clear All", tint = MaterialTheme.colorScheme.error)
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                }
             )
         }
     ) { padding ->
@@ -58,9 +51,14 @@ fun HistoryScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(Icons.Default.History, null, modifier = Modifier.size(64.dp), tint = SurfaceLight)
+                Icon(
+                    Icons.Default.History, 
+                    null, 
+                    modifier = Modifier.size(64.dp), 
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                )
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Start reading to see your history", color = TextSecondary)
+                Text("Start reading to see your history", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(
@@ -93,17 +91,20 @@ fun HistoryCard(title: String, preview: String, timestamp: Long, onClick: () -> 
     
     Card(
         onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = SurfaceDark)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                Text(date, style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(date, style = MaterialTheme.typography.labelSmall)
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(preview, maxLines = 2, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+            Text(preview, maxLines = 2, style = MaterialTheme.typography.bodySmall)
             IconButton(onClick = onDelete, modifier = Modifier.align(Alignment.End)) {
-                Icon(Icons.Default.Delete, null, tint = ErrorRed.copy(alpha = 0.6f))
+                Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error.copy(alpha = 0.6f))
             }
         }
     }

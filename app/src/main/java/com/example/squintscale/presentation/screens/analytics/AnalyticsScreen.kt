@@ -21,16 +21,9 @@ fun AnalyticsScreen(
     viewModel: AnalyticsViewModel = hiltViewModel()
 ) {
     Scaffold(
-        containerColor = BackgroundDark,
         topBar = {
             TopAppBar(
-                title = { Text("Insights", color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = TextPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                title = { Text("Insights") }
             )
         }
     ) { padding ->
@@ -42,13 +35,19 @@ fun AnalyticsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            StatsCard("Reading Streak", "5 Days", SoftPurple)
-            StatsCard("Total Time", "124 Minutes", AccentGreen)
+            StatsCard("Reading Streak", "5 Days", MaterialTheme.colorScheme.primary)
+            StatsCard("Total Time", "124 Minutes", MaterialTheme.colorScheme.secondary)
             
-            Text("Activity Trend", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
+            Text("Activity Trend", style = MaterialTheme.typography.titleLarge)
             // Simplified Chart Placeholder
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp).padding(16.dp), contentAlignment = Alignment.Center) {
-                Text("Vico Chart Placeholder", color = TextSecondary)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .padding(16.dp), 
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Vico Chart Placeholder", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -58,10 +57,13 @@ fun AnalyticsScreen(
 fun StatsCard(label: String, value: String, color: androidx.compose.ui.graphics.Color) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SurfaceDark)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = TextSecondary)
+            Text(label, style = MaterialTheme.typography.labelLarge)
             Text(value, style = MaterialTheme.typography.headlineLarge, color = color)
         }
     }

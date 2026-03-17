@@ -61,19 +61,9 @@ fun HomeScreen(
     }
 
     Scaffold(
-        containerColor = BackgroundDark,
         topBar = {
             TopAppBar(
-                title = { Text("SquintScale", color = TextPrimary, fontFamily = OutfitFont) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark),
-                actions = {
-                    IconButton(onClick = { navController.navigate(Screen.History.route) }) {
-                        Icon(Icons.Default.History, "History", tint = TextPrimary)
-                    }
-                    IconButton(onClick = { navController.navigate(Screen.Analytics.route) }) {
-                        Icon(Icons.Default.BarChart, "Analytics", tint = TextPrimary)
-                    }
-                }
+                title = { Text("SquintScale", fontFamily = OutfitFont) },
             )
         }
     ) { padding ->
@@ -81,7 +71,7 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Text("Quick Actions", style = MaterialTheme.typography.headlineMedium, color = TextPrimary)
+            Text("Quick Actions", style = MaterialTheme.typography.headlineMedium)
             
             QuickActionCard("Camera Scan", Icons.Default.CameraAlt, "Scan physical text") {
                 permissionLauncher.launch(Manifest.permission.CAMERA)
@@ -94,10 +84,10 @@ fun HomeScreen(
             }
 
             if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = SoftPurple)
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
             
-            uiState.error?.let { Text(it, color = ErrorRed) }
+            uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }
 
         if (uiState.showUrlDialog) {
@@ -120,17 +110,20 @@ fun QuickActionCard(title: String, icon: ImageVector, subtitle: String, onClick:
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceDark)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     ) {
         Row(
             modifier = Modifier.padding(20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, null, tint = SoftPurple, modifier = Modifier.size(32.dp))
+            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = TextPrimary)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -149,31 +142,22 @@ fun UrlInputDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = SurfaceDark,
-        titleContentColor = TextPrimary,
-        textContentColor = TextSecondary,
         title = { Text("Paste URL") },
         text = {
             TextField(
                 value = url,
                 onValueChange = { url = it },
                 placeholder = { Text("https://...") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = BackgroundDark,
-                    unfocusedContainerColor = BackgroundDark,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
-                )
+                modifier = Modifier.fillMaxWidth()
             )
         },
         confirmButton = {
-            Button(onClick = { onConfirm(url) }, colors = ButtonDefaults.buttonColors(containerColor = SoftPurple)) { 
-                Text("Extract", color = Color.White) 
+            Button(onClick = { onConfirm(url) }) { 
+                Text("Extract") 
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel", color = SoftPurple) }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }

@@ -2,17 +2,22 @@ package com.example.squintscale.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-val SoftPurple = Color(0xFF6C63FF)
-val BackgroundDark = Color(0xFF0F172A)
-val SurfaceDark = Color(0xFF1E293B)
-val AccentGreen = Color(0xFF22C55E)
-val WarningOrange = Color(0xFFF59E0B)
-val ErrorRed = Color(0xFFEF4444)
-val TextPrimary = Color(0xFFF8FAFC)
-val TextSecondary = Color(0xFF94A3B8)
+// Salt and Pepper Palette
+val SaltWhite = Color(0xFFF2F2F2)
+val LightPepper = Color(0xFFD9D9D9)
+val MediumPepper = Color(0xFF8C8C8C)
+val DarkPepper = Color(0xFF404040)
+val CoalBlack = Color(0xFF1A1A1A)
 
-// Light Mode variants (optional but recommended)
-val BackgroundLight = Color(0xFFF8FAFC)
-val SurfaceLight = Color(0xFFFFFFFF)
-val TextPrimaryLight = Color(0xFF0F172A)
-val TextSecondaryLight = Color(0xFF475569)
+// Functional Mapping
+val BackgroundDark = CoalBlack
+val SurfaceDark = DarkPepper
+val SurfaceLight = LightPepper
+val SoftPurple = MediumPepper // Keeping the name to avoid breaking code, but mapping to theme
+val TextPrimary = SaltWhite
+val TextSecondary = LightPepper
+val ErrorRed = Color(0xFFD32F2F) // Muted Red for Salt & Pepper theme
+
+// Legacy mapping for existing code compatibility
+val AccentGreen = Color(0xFF757575)
+val WarningOrange = Color(0xFFBDBDBD)

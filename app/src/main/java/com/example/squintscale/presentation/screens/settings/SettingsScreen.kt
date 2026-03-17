@@ -29,16 +29,9 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings", color = TextPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextPrimary)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundDark)
+                title = { Text("Settings") }
             )
-        },
-        containerColor = BackgroundDark
+        }
     ) { padding ->
         Column(
             modifier = Modifier
@@ -72,7 +65,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             SettingsSection("Appearance") {
-                SettingItem("Theme", "System Default")
+                SettingItem("Theme", "Light")
                 SettingItem("Accent Color", "Soft Purple")
             }
 
@@ -81,7 +74,7 @@ fun SettingsScreen(
             SettingsSection("Data & Privacy") {
                 SettingItem("Export Reading Data", "JSON/PDF")
                 TextButton(onClick = { }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Clear All History", color = ErrorRed)
+                    Text("Clear All History", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -93,22 +86,25 @@ fun ProfileHeader() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceDark)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     ) {
         Row(
             modifier = Modifier.padding(24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(64.dp).background(SoftPurple.copy(alpha = 0.2f), RoundedCornerShape(16.dp)),
+                modifier = Modifier.size(64.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Person, contentDescription = null, tint = SoftPurple, modifier = Modifier.size(32.dp))
+                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
             }
             Spacer(modifier = Modifier.width(20.dp))
             Column {
-                Text(text = "User Name", style = MaterialTheme.typography.titleLarge, color = TextPrimary)
-                Text(text = "Reading Enthusiast", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                Text(text = "User Name", style = MaterialTheme.typography.titleLarge)
+                Text(text = "Reading Enthusiast", style = MaterialTheme.typography.labelSmall)
             }
         }
     }
@@ -117,11 +113,19 @@ fun ProfileHeader() {
 @Composable
 fun SettingsSection(title: String, content: @Composable () -> Unit) {
     Column {
-        Text(text = title, style = MaterialTheme.typography.labelSmall, color = SoftPurple, modifier = Modifier.padding(bottom = 12.dp))
+        Text(
+            text = title, 
+            style = MaterialTheme.typography.labelSmall, 
+            color = MaterialTheme.colorScheme.primary, 
+            modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+        )
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfaceDark)
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
                 content()
@@ -137,8 +141,8 @@ fun SettingToggle(title: String, checked: Boolean, onCheckedChange: (Boolean) ->
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = title, color = TextPrimary)
-        Switch(checked = checked, onCheckedChange = onCheckedChange, colors = SwitchDefaults.colors(checkedThumbColor = SoftPurple))
+        Text(text = title)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -149,7 +153,7 @@ fun SettingItem(title: String, value: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = title, color = TextPrimary)
-        Text(text = value, color = TextSecondary)
+        Text(text = title)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
     }
 }

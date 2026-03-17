@@ -49,18 +49,40 @@ class HomeViewModel @Inject constructor(
     }
 
     fun extractUrlContent(url: String, onResult: (String) -> Unit) {
+        val sanitizedUrl = if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            "https://$url"
+        } else {
+            url
+        }
+
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val doc = Jsoup.connect(url).get()
+                val doc = Jsoup.connect(sanitizedUrl)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                    .referrer("http://www.google.com")
+                    .followRedirects(true)
+                    .timeout(15000)
+                    .get()
+                
                 val content = doc.body().text()
+                
+                if (content.isBlank()) {
+                    throw Exception("No readable text found on the page.")
+                }
+
                 withContext(Dispatchers.Main) {
                     _uiState.update { it.copy(isLoading = false) }
                     onResult(content)
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    _uiState.update { it.copy(isLoading = false, error = "Failed to fetch content: ${e.message}") }
+                    val errorMessage = when {
+                        e.message?.contains("403") == true -> "Access denied by website. Try another link."
+                        e.message?.contains("404") == true -> "Page not found. Check the URL."
+                        else -> "Failed to fetch content: ${e.message}"
+                    }
+                    _uiState.update { it.copy(isLoading = false, error = errorMessage) }
                 }
             }
         }
