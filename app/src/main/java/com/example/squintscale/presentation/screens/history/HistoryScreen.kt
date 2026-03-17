@@ -77,9 +77,9 @@ fun HistoryScreen(
                         preview = item.contentPreview,
                         timestamp = item.timestamp,
                         onClick = {
-                            val encodedText = URLEncoder.encode(item.contentFull, StandardCharsets.UTF_8.toString())
-                            val encodedTitle = URLEncoder.encode(item.title, StandardCharsets.UTF_8.toString())
-                            navController.navigate(Screen.Reading.createRoute(encodedText, encodedTitle, item.sourceType))
+                            // The Screen.Reading.createRoute already performs URLEncode. 
+                            // Removed double encoding here which was causing navigation issues.
+                            navController.navigate(Screen.Reading.createRoute(item.contentFull, item.title, item.sourceType))
                         },
                         onDelete = { viewModel.deleteItem(item.id) }
                     )
