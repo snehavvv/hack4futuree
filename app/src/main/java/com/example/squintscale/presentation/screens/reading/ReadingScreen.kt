@@ -64,47 +64,51 @@ fun ReadingScreen(
         else -> Color.Transparent
     }
 
-    val backgroundColor = if (uiState.colorOverlay == "Dark") Color.Black else BackgroundDark
-    val textColor = if (uiState.colorOverlay == "Dark") Color.White else TextPrimary
+    val backgroundColor = if (uiState.colorOverlay == "Dark") Color.Black else MaterialTheme.colorScheme.background
+    val textColor = if (uiState.colorOverlay == "Dark") Color.White else MaterialTheme.colorScheme.onBackground
 
     Scaffold(
         topBar = {
-            Column {
-                TopAppBar(
-                    title = { Text(uiState.title, color = textColor) },
-                    navigationIcon = {
-                        IconButton(onClick = { 
-                            viewModel.onExit()
-                            navController.popBackStack() 
-                        }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = textColor)
+            if (uiState.userProfile?.isFocusMode != true) {
+                Column {
+                    TopAppBar(
+                        title = { Text(uiState.title) },
+                        navigationIcon = {
+                            IconButton(onClick = { 
+                                viewModel.onExit()
+                                navController.popBackStack() 
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = backgroundColor)
-                )
-                LinearProgressIndicator(
-                    progress = { uiState.readingProgress },
-                    modifier = Modifier.fillMaxWidth().height(4.dp),
-                    color = SoftPurple,
-                    trackColor = backgroundColor
-                )
+                    )
+                    LinearProgressIndicator(
+                        progress = { uiState.readingProgress },
+                        modifier = Modifier.fillMaxWidth().height(4.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = backgroundColor
+                    )
+                }
             }
         },
         containerColor = backgroundColor
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier.fillMaxSize().padding(if (uiState.userProfile?.isFocusMode == true) PaddingValues(0.dp) else padding)) {
             // Background Overlay
             Box(modifier = Modifier.fillMaxSize().background(overlayColor))
 
             val paragraphs = uiState.text.split("\n\n")
 
             if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = SoftPurple)
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 150.dp)
+                    contentPadding = PaddingValues(
+                        top = if (uiState.userProfile?.isFocusMode == true) 60.dp else 16.dp, 
+                        bottom = 150.dp
+                    )
                 ) {
                     itemsIndexed(paragraphs) { _, paragraph ->
                         Text(
@@ -124,14 +128,27 @@ fun ReadingScreen(
             }
 
             // Floating Bottom Toolbar
-            ReadingBottomBar(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                uiState = uiState,
-                onFontSizeDecrease = { viewModel.updateFontSize(-2f) },
-                onFontSizeIncrease = { viewModel.updateFontSize(2f) },
-                onToggleTts = viewModel::toggleTts,
-                onBookmark = { /* Save to history with note logic */ }
-            )
+            if (uiState.userProfile?.isFocusMode != true) {
+                ReadingBottomBar(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    uiState = uiState,
+                    onFontSizeDecrease = { viewModel.updateFontSize(-2f) },
+                    onFontSizeIncrease = { viewModel.updateFontSize(2f) },
+                    onToggleTts = viewModel::toggleTts,
+                    onBookmark = { /* Save to history with note logic */ }
+                )
+            } else {
+                // Minimal exit button for ADHD mode
+                IconButton(
+                    onClick = { 
+                        viewModel.onExit()
+                        navController.popBackStack() 
+                    },
+                    modifier = Modifier.align(Alignment.TopStart).padding(16.dp)
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Exit Focus Mode", tint = textColor.copy(alpha = 0.5f))
+                }
+            }
         }
     }
 }
@@ -150,7 +167,10 @@ fun ReadingBottomBar(
             .padding(16.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = SurfaceDark.copy(alpha = 0.9f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f),
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Row(
@@ -162,11 +182,11 @@ fun ReadingBottomBar(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onFontSizeDecrease) {
-                    Icon(Icons.Default.Remove, contentDescription = "Decrease Font", tint = TextPrimary)
+                    Icon(Icons.Default.Remove, contentDescription = "Decrease Font")
                 }
-                Text("A", fontSize = 16.sp, color = TextPrimary, modifier = Modifier.padding(horizontal = 4.dp))
+                Text("A", fontSize = 16.sp, modifier = Modifier.padding(horizontal = 4.dp))
                 IconButton(onClick = onFontSizeIncrease) {
-                    Icon(Icons.Default.Add, contentDescription = "Increase Font", tint = TextPrimary)
+                    Icon(Icons.Default.Add, contentDescription = "Increase Font")
                 }
             }
 
@@ -176,16 +196,16 @@ fun ReadingBottomBar(
                 Icon(
                     imageVector = if (uiState.isTtsActive) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
                     contentDescription = "Text to Speech",
-                    tint = if (uiState.isTtsActive) SoftPurple else TextPrimary
+                    tint = if (uiState.isTtsActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
                 )
             }
 
             IconButton(onClick = onBookmark) {
-                Icon(Icons.Default.BookmarkBorder, contentDescription = "Bookmark", tint = TextPrimary)
+                Icon(Icons.Default.BookmarkBorder, contentDescription = "Bookmark")
             }
             
             IconButton(onClick = { /* Contrast toggle logic */ }) {
-                Icon(Icons.Default.Contrast, contentDescription = "Contrast", tint = TextPrimary)
+                Icon(Icons.Default.Contrast, contentDescription = "Contrast")
             }
         }
     }

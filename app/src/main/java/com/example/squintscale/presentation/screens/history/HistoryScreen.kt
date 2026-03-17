@@ -35,6 +35,11 @@ fun HistoryScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Reading History") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
                 actions = {
                     if (uiState.historyItems.isNotEmpty()) {
                         IconButton(onClick = viewModel::clearAll) {

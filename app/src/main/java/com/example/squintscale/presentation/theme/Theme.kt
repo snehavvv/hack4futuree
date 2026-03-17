@@ -45,8 +45,7 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun SquintScaleTheme(
-    darkTheme: Boolean = false, // Force light theme as requested
-    // Set dynamicColor to false to prioritize the Salt and Pepper theme
+    darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {

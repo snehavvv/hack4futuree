@@ -13,5 +13,6 @@ data class UserProfileEntity(
     val lineSpacing: Float,
     val isDyslexiaMode: Boolean,
     val isFocusMode: Boolean,
-    val visualComfortScore: Int
+    val isDarkMode: Boolean = false,
+    val visualComfortScore: Int = 0
 )
