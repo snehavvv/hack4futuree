@@ -21,8 +21,8 @@ export const LoginPage: React.FC = () => {
       await signIn(email, password);
       addToast('Welcome back to SquintScale', 'success');
       navigate('/upload');
-    } catch (error) {
-      addToast('Invalid credentials. Try guest login.', 'error');
+    } catch (error: any) {
+      addToast(error?.message || 'Invalid credentials', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -83,20 +83,20 @@ export const LoginPage: React.FC = () => {
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-4">
-              <label className="text-[9px] font-technical font-black uppercase tracking-[0.4em] text-text-muted ml-1 opacity-40">Email Terminal</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@agency.ai" className="w-full h-14 glass bg-white/[0.01] border-white/5 rounded-2xl py-3 px-6 focus:border-white/20 outline-none transition-all font-body text-sm" required />
+              <label className="text-[9px] font-technical font-black uppercase tracking-[0.4em] ml-1 text-[#444444] dark:text-[#AAAAAA]">Email Terminal</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@agency.ai" className="w-full h-14 rounded-2xl py-3 px-6 outline-none transition-all font-body text-sm bg-[#F5F5F5] dark:bg-[#1A1A1A] text-[#0A0A0A] dark:text-[#F0F0F0] border border-[#D0D0D0] dark:border-[#3A3A3A] focus:border-[#0A0A0A] dark:focus:border-[#F0F0F0] placeholder-[#888888] dark:placeholder-[#555555]" required />
             </div>
             <div className="space-y-4">
               <div className="flex items-center justify-between ml-1">
-                <label className="text-[9px] font-technical font-black uppercase tracking-[0.4em] text-text-muted opacity-40">Neural Link</label>
+                <label className="text-[9px] font-technical font-black uppercase tracking-[0.4em] text-[#444444] dark:text-[#AAAAAA]">Neural Link</label>
                 <Link to="#" className="text-[9px] font-technical font-black uppercase tracking-[0.2em] text-text-primary opacity-40 hover:opacity-100">Reset</Link>
               </div>
               <div className="relative group">
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full h-14 glass bg-white/[0.01] border-white/5 rounded-2xl py-3 px-6 focus:border-white/20 outline-none transition-all font-body text-sm" required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"><Eye size={18} /></button>
+                <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full h-14 rounded-2xl py-3 px-6 outline-none transition-all font-body text-sm bg-[#F5F5F5] dark:bg-[#1A1A1A] text-[#0A0A0A] dark:text-[#F0F0F0] border border-[#D0D0D0] dark:border-[#3A3A3A] focus:border-[#0A0A0A] dark:focus:border-[#F0F0F0] placeholder-[#888888] dark:placeholder-[#555555]" required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-[#666666] dark:text-[#888888] transition-colors"><Eye size={18} /></button>
               </div>
             </div>
-            <button type="submit" disabled={isSubmitting} className="w-full h-16 btn btn-primary rounded-2xl font-display font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 group shadow-panel-premium">
+            <button type="submit" disabled={isSubmitting} className="w-full h-16 rounded-2xl font-display font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 group shadow-panel-premium bg-[#0A0A0A] dark:bg-[#FFFFFF] text-white dark:text-[#0A0A0A] hover:bg-[#2A2A2A] dark:hover:bg-[#E0E0E0] transition-colors">
               Initiate Session <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
             </button>
           </form>

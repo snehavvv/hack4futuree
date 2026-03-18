@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
- import { useParams, useNavigate } from 'react-router-dom';
- import { motion } from 'framer-motion';
+import { useParams, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import {
   Download,
   Share2,
@@ -18,43 +18,76 @@ import { WCAGChecklist } from '../components/WCAGChecklist';
 import { ImageComparison } from '../components/ImageComparison';
 import { OnboardingTour } from '../components/OnboardingTour';
 import { useToast } from '../components/Toast';
-import { getAnalysisById, generateSimulatedImage } from '../lib/analysisEngine';
-import { exportAsPDF, exportAsJSON, copyToClipboard } from '../lib/exportUtils';
-import type { AnalysisResult, SimulationPreset } from '../types';
+import { exportAsJSON, copyToClipboard } from '../lib/exportUtils';
+import apiClient from '../lib/apiClient';
+import type { AnalysisOut, AnalysisDimension, Suggestion, WCAGIssue } from '../types';
 import { PRESET_CONFIGS } from '../types';
+
+type ResultsData = AnalysisOut & {
+  dimensions: AnalysisDimension[];
+  mappedSuggestions: Suggestion[];
+  mappedWcagIssues: WCAGIssue[];
+};
 
 export const ResultsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const heroScale = 1;
   const heroOpacity = 1;
 
   useEffect(() => {
-    if (id) {
-      const data = getAnalysisById(id);
-      if (data) {
-        setResult(data);
-      }
-      setLoading(false);
-    }
-  }, [id]);
+    const fetchResults = async () => {
+      if (!id) return;
+      try {
+        const { data } = await apiClient.get<AnalysisOut>(`/analyses/${id}`);
+        
+        // Adapt backend shapes to frontend components
+        const dimensions: AnalysisDimension[] = [
+          { name: 'OCR Retention', score: Math.round(data.metrics?.ocr_retention_rate || 0), description: 'Text recognized vs original', icon: 'Type' },
+          { name: 'Contrast', score: Math.round(data.metrics?.contrast_score || 0), description: 'Luminance distinguishability', icon: 'Sun' },
+          { name: 'Font Size', score: Math.round(data.metrics?.font_size_score || 0), description: 'Legibility scaled sizing', icon: 'Type' },
+          { name: 'Clutter', score: Math.round(data.metrics?.visual_clutter_score || 0), description: 'Edge density distraction', icon: 'Layout' },
+          { name: 'Color', score: Math.round(data.metrics?.color_accessibility_score || 0), description: 'Distinguishability under deficiency', icon: 'Palette' },
+        ];
 
-  const handlePresetChange = async (preset: SimulationPreset) => {
-    if (!result) return;
-    
-    addToast(`Simuring ${preset}...`, 'info');
-    const simulatedImageUrl = await generateSimulatedImage(result.imageUrl, preset);
-    
-    setResult({
-      ...result,
-      preset,
-      simulatedImageUrl
-    });
-  };
+        const mappedSuggestions: Suggestion[] = (data.suggestions || []).map((s, i) => ({
+          id: String(s.rank || i),
+          title: `Improve ${s.dimension || 'Readability'}`,
+          description: s.suggestion_text || '',
+          impact: (s.severity as any) || 'medium',
+          category: s.dimension || 'General'
+        }));
+
+        const mappedWcagIssues: WCAGIssue[] = (data.wcag_issues || []).map((w, i) => ({
+          id: `wcag-${i}`,
+          criterion: w.criterion,
+          title: `WCAG ${w.criterion} Issue`,
+          description: w.description,
+          level: data.wcag_level as any,
+          status: (w.severity as any) || 'fail'
+        }));
+
+        setResult({
+          ...data,
+          dimensions,
+          mappedSuggestions,
+          mappedWcagIssues
+        });
+      } catch (err) {
+        console.error('Failed to load analysis', err);
+        addToast('Failed to load analysis results', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResults();
+  }, [id, addToast]);
 
   if (loading) {
     return (
@@ -64,11 +97,13 @@ export const ResultsPage: React.FC = () => {
     );
   }
 
-  if (!result) {
+  if (!result || result.status !== 'completed') {
     return (
-      <div className="text-center py-24 glass rounded-[40px] border-white/5 max-w-2xl mx-auto">
+      <div className="text-center py-24 glass rounded-[40px] border-white/5 max-w-2xl mx-auto mt-12">
         <h2 className="text-3xl font-display font-bold text-text-primary mb-4 uppercase tracking-tight">Report Unavailable</h2>
-        <p className="text-text-secondary mb-10 text-lg font-body font-light">The requested analysis intelligence could not be retrieved from the system core.</p>
+        <p className="text-text-secondary mb-10 text-lg font-body font-light">
+          {result?.status === 'failed' ? result.error_reason : 'The requested analysis intelligence could not be retrieved from the system core.'}
+        </p>
         <button 
           onClick={() => navigate('/upload')}
           className="btn btn-primary px-10 py-4 text-xs font-black uppercase tracking-[0.3em] rounded-2xl shadow-2xl"
@@ -97,9 +132,9 @@ export const ResultsPage: React.FC = () => {
           </button>
           <div>
             <h1 className="text-4xl font-display font-black text-text-primary truncate max-w-[200px] md:max-w-none uppercase tracking-tighter leading-none mb-2">
-              {result.fileName || 'Neural Report'}
+              Neural Report
             </h1>
-            <p className="text-[10px] text-text-muted font-technical font-black tracking-[0.5em] uppercase opacity-30">{result.jobId}</p>
+            <p className="text-[10px] text-text-muted font-technical font-black tracking-[0.5em] uppercase opacity-30">{result.id}</p>
           </div>
         </div>
 
@@ -117,10 +152,40 @@ export const ResultsPage: React.FC = () => {
             </button>
             <div className="absolute top-[calc(100%+12px)] right-0 w-64 hidden group-hover:block glass bg-bg-surface/80 shadow-panel z-50 overflow-hidden border-white/10 rounded-[24px]">
               <button 
-                onClick={() => exportAsPDF(result)}
+                disabled={isGeneratingPDF}
+                onClick={async () => {
+                  setIsGeneratingPDF(true);
+                  try {
+                    // Try to GET first incase it exists
+                    try {
+                      const { data } = await apiClient.get(`/reports/${result.id}`);
+                      window.open(data.report_url, '_blank');
+                      setIsGeneratingPDF(false);
+                      return;
+                    } catch (err: any) {
+                      if (err.response?.status !== 404) throw err;
+                    }
+                    
+                    // Generate it
+                    addToast('Generating Neural PDF Report...', 'info');
+                    const { data } = await apiClient.post(`/reports`, { analysis_id: result.id });
+                    window.open(data.report_url, '_blank');
+                    addToast('Report generated successfully!', 'success');
+                  } catch (err) {
+                    console.error("PDF Export failed", err);
+                    addToast('Failed to generate PDF Report. Note: PDF generation limits reached.', 'error');
+                  } finally {
+                    setIsGeneratingPDF(false);
+                  }
+                }}
                 className="w-full flex items-center gap-5 px-8 py-6 text-[9px] font-black uppercase tracking-[0.3em] hover:bg-white/5 text-left transition-colors text-text-primary"
               >
-                <FileText size={20} /> PDF Intelligence
+                {isGeneratingPDF ? (
+                   <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                ) : (
+                   <FileText size={20} /> 
+                )}
+                {isGeneratingPDF ? 'Compiling...' : 'PDF Intelligence'}
               </button>
               <button 
                 onClick={() => exportAsJSON(result)}
@@ -154,7 +219,7 @@ export const ResultsPage: React.FC = () => {
             viewport={{ once: true }}
             className="glass p-8 border-white/10 rounded-[40px] shadow-2xl"
           >
-            <ImageComparison original={result.imageUrl} simulated={result.simulatedImageUrl || result.imageUrl} />
+            <ImageComparison original={result.original_image_path || ''} simulated={result.degraded_image_path || result.original_image_path || ''} />
           </motion.div>
 
           <div className="grid sm:grid-cols-2 gap-10">
@@ -170,21 +235,20 @@ export const ResultsPage: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(PRESET_CONFIGS).map(([key, config]) => (
-                  <button
+                  <div
                     key={key}
-                    onClick={() => handlePresetChange(key as SimulationPreset)}
                     className={`
                       px-4 py-5 rounded-2xl text-left transition-all border
-                      ${result.preset === key 
+                      ${result.simulation_preset === key 
                         ? 'bg-text-primary text-bg-primary border-transparent shadow-2xl scale-[1.02]' 
-                        : 'bg-white/[0.02] text-text-secondary border-white/5 hover:border-white/20'}
+                        : 'bg-white/[0.02] text-text-secondary border-white/5 opacity-40'}
                     `}
                   >
                     <p className="text-xs font-black uppercase tracking-tight leading-tight">{config.label}</p>
-                    <p className={`text-[9px] mt-1.5 leading-tight font-medium ${result.preset === key ? 'opacity-70' : 'opacity-40'}`}>
+                    <p className={`text-[9px] mt-1.5 leading-tight font-medium ${result.simulation_preset === key ? 'opacity-70' : 'opacity-40'}`}>
                       {config.description}
                     </p>
-                  </button>
+                  </div>
                 ))}
               </div>
             </motion.div>
@@ -211,26 +275,26 @@ export const ResultsPage: React.FC = () => {
             className="glass p-16 flex flex-col items-center justify-center bg-radial-at-t from-white/[0.03] to-transparent border-white/10 text-center rounded-[60px] shadow-panel-premium relative overflow-hidden bg-dot-grid animate-scan"
           >
             <div className="absolute inset-0 bg-grain pointer-events-none" />
-            <ScoreGauge score={result.squintScore} size={300} />
+            <ScoreGauge score={result.squint_score || 0} size={300} />
             <div className="mt-16 pt-16 border-t border-white/5 w-full relative z-10">
               <p className="text-[10px] text-text-muted mb-6 font-technical font-black uppercase tracking-[0.5em] opacity-30">Neural Readability Rank</p>
               <div className="flex items-center justify-center gap-6">
                 <div className="h-2 w-48 bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    whileInView={{ width: `${result.squintScore}%` }}
+                    whileInView={{ width: `${result.squint_score || 0}%` }}
                     className="h-full bg-text-primary" 
                     transition={{ duration: 1.5, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   />
                 </div>
-                <span className="font-technical text-[10px] font-black text-text-primary uppercase tracking-[0.2em]">PR {result.squintScore}</span>
+                <span className="font-technical text-[10px] font-black text-text-primary uppercase tracking-[0.2em]">PR {result.squint_score}</span>
               </div>
             </div>
           </motion.div>
 
-          <SuggestionsPanel suggestions={result.suggestions} />
+          <SuggestionsPanel suggestions={result.mappedSuggestions} />
           
-          <WCAGChecklist issues={result.wcagIssues} />
+          <WCAGChecklist issues={result.mappedWcagIssues} />
         </div>
       </motion.div>
     </div>
