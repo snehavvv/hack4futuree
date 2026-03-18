@@ -1,11 +1,48 @@
 node_modules/
 dist/
-.env
-
-# Android
-app/
-gradle/
-.gradle/
-.idea/
 build/
-local.properties
+bin/
+obj/
+
+# Environment files
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+backend/.venv/
+backend/venv/
+backend/env/
+backend/__pycache__/
+
+# Supabase
+supabase/.branches/
+supabase/.temp/
+supabase/volumes/
+supabase/.env
+
+# Editors/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

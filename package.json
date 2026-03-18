@@ -12,6 +12,7 @@
   "dependencies": {
     "@studio-freight/react-lenis": "^0.0.47",
     "@supabase/supabase-js": "^2.99.2",
+    "axios": "^1.13.6",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.37.0",
     "html2canvas": "^1.4.1",

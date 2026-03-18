@@ -1,0 +1,41 @@
+# Production env vars must be set in the Render dashboard.
+# SUPABASE_URL and DATABASE_URL in production point to your hosted
+# Supabase project — NOT host.docker.internal (that is local dev only).
+
+services:
+  - name: squintscale-backend
+    type: web
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false
+
+  - name: squintscale-frontend
+    type: static
+    rootDir: .
+    buildCommand: npm install && npm run build
+    publishPath: ./dist
+    envVars:
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_API_URL
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
