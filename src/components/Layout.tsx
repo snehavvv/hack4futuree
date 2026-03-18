@@ -5,10 +5,9 @@ import { ThemeToggle } from './ThemeToggle';
 import { PageTransitionLoader } from './PageTransitionLoader';
 import { MagneticHamburger } from './MagneticHamburger';
 import { CustomCursor } from './CustomCursor';
-import { ReactLenis } from 'lenis/react';
+import { ReactLenis } from '@studio-freight/react-lenis';
 import { Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ConstellationCanvas from './ConstellationCanvas';
 
 export const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -41,7 +40,6 @@ export const Layout: React.FC = () => {
     <ReactLenis root>
       <CustomCursor />
       <PageTransitionLoader />
-      <ConstellationCanvas />
       <div className="relative z-10">
         <Outlet />
       </div>
@@ -50,25 +48,24 @@ export const Layout: React.FC = () => {
 
   return (
     <ReactLenis root>
-      <div className="flex min-h-screen bg-bg-base text-text-primary overflow-x-hidden relative font-body cursor-none">
+      <div className="flex min-h-screen bg-transparent text-text-primary overflow-hidden relative font-body cursor-none">
         <CustomCursor />
         <PageTransitionLoader />
         {/* Background System */}
-      <div className="bg-nebula pointer-events-none">
-        <div className="nebula-blob w-[600px] h-[600px] -top-40 -right-40 animate-nebula opacity-10" />
-        <div className="nebula-blob w-[800px] h-[800px] -bottom-60 -left-60 animate-nebula opacity-10" style={{ animationDelay: '-5s' }} />
+      <div className="bg-nebula pointer-events-none absolute inset-0 -z-10">
+        <div className="nebula-blob w-[600px] h-[600px] -top-40 -right-40 animate-nebula opacity-[0.05]" />
+        <div className="nebula-blob w-[800px] h-[800px] -bottom-60 -left-60 animate-nebula opacity-[0.05]" style={{ animationDelay: '-5s' }} />
         <div className="absolute inset-0 bg-grid opacity-[0.4]" />
         <div className="absolute inset-0 bg-dot-grid opacity-[0.2]" />
       </div>
-      <ConstellationCanvas />
 
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
-      <main className="flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
+      <main className="flex-1 flex flex-col min-w-0 min-h-screen relative z-10 overflow-x-hidden">
         {/* Top Navbar */}
-        <header className="h-[90px] flex items-center justify-between px-10 border-b border-white/5 glass sticky top-0 z-[60] rounded-none border-x-0 border-t-0 bg-bg-base/60 backdrop-blur-3xl">
-          <div className="flex items-center gap-10">
-            <div className="lg:hidden relative z-[600]">
+        <header className="h-[90px] flex items-center justify-between px-8 md:px-12 border-b border-white/5 glass sticky top-0 z-[60] rounded-none border-x-0 border-t-0 bg-bg-base/60 backdrop-blur-3xl">
+          <div className="flex items-center gap-6 md:gap-10">
+            <div className="lg:hidden relative z-[1000] -ml-2">
               <MagneticHamburger isOpen={isSidebarOpen} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
             </div>
             <div className="flex flex-col">
@@ -98,7 +95,7 @@ export const Layout: React.FC = () => {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 px-10 py-12 relative bg-grain">
+        <div className="flex-1 px-4 md:px-10 py-12 relative bg-grain">
           <div className="max-w-[1400px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div

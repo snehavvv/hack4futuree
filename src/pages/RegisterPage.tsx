@@ -26,7 +26,7 @@ export const RegisterPage: React.FC = () => {
         addToast('Check your email to confirm your account', 'info');
       } else {
         addToast('Account initialized successfully', 'success');
-        navigate('/upload');
+        navigate('/dashboard');
       }
     } catch (error: any) {
       addToast(error?.message || 'Registration failed', 'error');
@@ -45,20 +45,20 @@ export const RegisterPage: React.FC = () => {
             <span className="text-2xl font-display font-black tracking-tighter uppercase">SQUINT<span className="opacity-20">SCALE</span></span>
           </div>
         </div>
-        <div className="z-10 max-w-md">
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="text-5xl lg:text-7xl font-display font-black leading-[0.95] mb-8 uppercase tracking-tighter">
-            Join the <br/><span className="opacity-20 text-white">Future</span>
+        <div className="z-10 max-w-2xl">
+          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="text-6xl lg:text-8xl xl:text-[7rem] font-display font-black leading-[0.9] mb-10 uppercase tracking-tighter mix-blend-plus-lighter">
+            Join the <br/><span className="text-transparent bg-clip-text bg-gradient-to-b from-white to-white/20">Future</span>
           </motion.h1>
-          <p className="text-text-secondary text-xl font-body font-light mb-12 opacity-60">Register your profile in the SquintScale network to unlock advanced intelligence.</p>
-          <div className="space-y-8">
-            <div className="flex items-center gap-6">
-              <div className="w-14 h-14 rounded-2xl glass flex items-center justify-center text-text-primary shadow-glow-premium font-display font-black uppercase text-xs">01</div>
-              <div><h3 className="font-display font-black uppercase text-sm tracking-tight mb-1 text-text-primary">Global Standards</h3><p className="text-[10px] text-text-muted font-technical uppercase tracking-widest opacity-40">Aligned with WCAG 2.2</p></div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="w-14 h-14 rounded-2xl glass flex items-center justify-center text-text-primary shadow-glow-premium font-display font-black uppercase text-xs">02</div>
-              <div><h3 className="font-display font-black uppercase text-sm tracking-tight mb-1 text-text-primary">Neural Simulation</h3><p className="text-[10px] text-text-muted font-technical uppercase tracking-widest opacity-40">8+ Vision intelligence modes</p></div>
-            </div>
+          <p className="text-text-secondary text-2xl lg:text-3xl font-body font-light mb-16 opacity-70 leading-relaxed max-w-xl">Register your profile in the SquintScale network to unlock advanced intelligence.</p>
+          <div className="space-y-10">
+            <motion.div whileHover={{ scale: 1.05, x: 10 }} className="flex items-center gap-8 cursor-none data-cursor='01'">
+              <div className="w-16 h-16 rounded-[24px] glass flex items-center justify-center text-text-primary shadow-glow-premium font-display font-black uppercase text-sm border-white/10">01</div>
+              <div><h3 className="font-display font-black uppercase text-base tracking-tight mb-1 text-text-primary text-glow">Global Standards</h3><p className="text-[11px] text-text-muted font-technical uppercase tracking-[0.2em] opacity-50">Aligned with WCAG 2.2</p></div>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05, x: 10 }} className="flex items-center gap-8 cursor-none data-cursor='02'">
+              <div className="w-16 h-16 rounded-[24px] glass flex items-center justify-center text-text-primary shadow-glow-premium font-display font-black uppercase text-sm border-white/10">02</div>
+              <div><h3 className="font-display font-black uppercase text-base tracking-tight mb-1 text-text-primary text-glow">Neural Simulation</h3><p className="text-[11px] text-text-muted font-technical uppercase tracking-[0.2em] opacity-50">8+ Vision intelligence modes</p></div>
+            </motion.div>
           </div>
         </div>
         <div className="z-10 flex items-center gap-6 text-[10px] text-text-muted font-technical font-black uppercase tracking-[0.4em] opacity-30">
@@ -67,47 +67,50 @@ export const RegisterPage: React.FC = () => {
           <span>ENCRYPTION_READY</span>
         </div>
       </div>
-      <div className="flex-1 flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-sm space-y-8">
+      <div className="flex-1 flex items-center justify-center p-8 md:p-16 lg:p-24 relative z-10">
+        <div className="w-full max-w-xl space-y-12">
           {confirmEmail ? (
-            <>
+            <div className="space-y-8">
               <div className="text-center md:text-left space-y-4">
-                <h2 className="text-4xl font-display font-black uppercase tracking-tighter">Check Email</h2>
-                <p className="text-text-secondary text-lg font-body font-light opacity-60">
-                  We sent a confirmation link to <span className="text-text-primary font-semibold">{email}</span>. Click the link in the email to activate your account.
+                <h2 className="text-5xl font-display font-black uppercase tracking-tighter">Check Email</h2>
+                <p className="text-text-secondary text-xl font-body font-light opacity-60 leading-relaxed">
+                  We sent a confirmation link to <span className="text-text-primary font-bold">{email}</span>. <br/>Check your terminal to activate your operative profile.
                 </p>
               </div>
-              <Link to="/login" className="w-full h-16 btn btn-primary rounded-2xl font-display font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 group shadow-panel-premium">
+              <Link to="/login" className="w-full h-20 glass bg-white/[0.05] border-white/10 hover:border-white/20 rounded-3xl font-display font-black uppercase tracking-[0.3em] text-xs flex items-center justify-center gap-4 group transition-all">
                 Return to Login <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
               </Link>
-            </>
+            </div>
           ) : (
             <>
-              <div className="text-center md:text-left space-y-4">
-                <h2 className="text-4xl font-display font-black uppercase tracking-tighter">Initialize</h2>
-                <p className="text-text-secondary text-lg font-body font-light opacity-60">Register within the SquintScale network.</p>
+              <div className="text-center md:text-left space-y-4 mb-4">
+                <h2 className="text-5xl lg:text-6xl font-display font-black uppercase tracking-tighter">Initialize</h2>
+                <p className="text-text-secondary text-xl font-body font-light opacity-60">Register within the SquintScale network.</p>
               </div>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
-                  <label className="text-[9px] font-technical font-black uppercase tracking-[0.4em] ml-1 text-[#444444] dark:text-[#AAAAAA]">Operative Name</label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Agent Smith" className="w-full h-14 rounded-2xl py-3 px-6 outline-none transition-all font-body text-sm bg-[#F5F5F5] dark:bg-[#1A1A1A] text-[#0A0A0A] dark:text-[#F0F0F0] border border-[#D0D0D0] dark:border-[#3A3A3A] focus:border-[#0A0A0A] dark:focus:border-[#F0F0F0] placeholder-[#888888] dark:placeholder-[#555555]" required />
+                  <label className="text-[11px] font-technical font-black uppercase tracking-[0.4em] text-text-muted ml-2 opacity-50">Operative Name</label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Agent Smith" className="w-full h-16 lg:h-20 glass bg-white/[0.01] border-white/10 hover:border-white/20 rounded-3xl py-4 px-8 focus:border-white/40 focus:bg-white/[0.02] outline-none transition-all font-body text-lg shadow-inner cursor-none" required />
                 </div>
                 <div className="space-y-4">
-                  <label className="text-[9px] font-technical font-black uppercase tracking-[0.4em] ml-1 text-[#444444] dark:text-[#AAAAAA]">Email Terminal</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@agency.ai" className="w-full h-14 rounded-2xl py-3 px-6 outline-none transition-all font-body text-sm bg-[#F5F5F5] dark:bg-[#1A1A1A] text-[#0A0A0A] dark:text-[#F0F0F0] border border-[#D0D0D0] dark:border-[#3A3A3A] focus:border-[#0A0A0A] dark:focus:border-[#F0F0F0] placeholder-[#888888] dark:placeholder-[#555555]" required />
+                  <label className="text-[11px] font-technical font-black uppercase tracking-[0.4em] text-text-muted ml-2 opacity-50">Email Terminal</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@agency.ai" className="w-full h-16 lg:h-20 glass bg-white/[0.01] border-white/10 hover:border-white/20 rounded-3xl py-4 px-8 focus:border-white/40 focus:bg-white/[0.02] outline-none transition-all font-body text-lg shadow-inner cursor-none" required />
                 </div>
                 <div className="space-y-4">
-                  <label className="text-[9px] font-technical font-black uppercase tracking-[0.4em] ml-1 text-[#444444] dark:text-[#AAAAAA]">Access Key</label>
+                  <label className="text-[11px] font-technical font-black uppercase tracking-[0.4em] text-text-muted ml-2 opacity-50">Access Key</label>
                   <div className="relative group">
-                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full h-14 rounded-2xl py-3 px-6 outline-none transition-all font-body text-sm bg-[#F5F5F5] dark:bg-[#1A1A1A] text-[#0A0A0A] dark:text-[#F0F0F0] border border-[#D0D0D0] dark:border-[#3A3A3A] focus:border-[#0A0A0A] dark:focus:border-[#F0F0F0] placeholder-[#888888] dark:placeholder-[#555555]" required />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-[#666666] dark:text-[#888888] transition-colors"><Eye size={18} /></button>
+                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full h-16 lg:h-20 glass bg-white/[0.01] border-white/10 hover:border-white/20 rounded-3xl py-4 px-8 focus:border-white/40 focus:bg-white/[0.02] outline-none transition-all font-body text-lg shadow-inner cursor-none" required />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-8 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors cursor-none"><Eye size={24} /></button>
                   </div>
                 </div>
-                <button type="submit" disabled={isSubmitting} className="w-full h-16 rounded-2xl font-display font-black uppercase tracking-[0.3em] text-[10px] flex items-center justify-center gap-4 group shadow-panel-premium bg-[#0A0A0A] dark:bg-[#FFFFFF] text-white dark:text-[#0A0A0A] hover:bg-[#2A2A2A] dark:hover:bg-[#E0E0E0] transition-colors">
+                <button type="submit" disabled={isSubmitting} className="w-full h-20 mt-4 btn btn-primary rounded-3xl font-display font-black uppercase tracking-[0.3em] text-xs flex items-center justify-center gap-4 group shadow-panel-premium hover:scale-[1.02] transition-all cursor-none">
                   Initialize Profile <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
                 </button>
               </form>
-              <p className="text-center text-[11px] text-text-muted font-body font-light opacity-60">Already have credentials? <Link to="/login" className="text-text-primary font-black hover:underline uppercase tracking-widest ml-1">Sign In</Link></p>
+              <div className="relative py-4">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10 opacity-50"></div></div>
+              </div>
+              <p className="text-center text-sm text-text-muted font-body font-light opacity-80 pt-4">Already have credentials? <Link to="/login" className="text-text-primary font-black hover:underline uppercase tracking-widest ml-1 cursor-none">Sign In</Link></p>
             </>
           )}
         </div>

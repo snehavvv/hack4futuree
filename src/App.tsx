@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider } from './components/Toast';
 import { Layout } from './components/Layout';
@@ -11,9 +11,12 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { GrandLoadingScreen } from './components/GrandLoadingScreen';
+import ConstellationCanvas from './components/ConstellationCanvas';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loading, user } = useAuth();
+  const location = useLocation();
   
   if (loading) return (
     <div className="min-h-screen bg-bg-primary flex items-center justify-center">
@@ -21,7 +24,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     </div>
   );
   
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   
   return <>{children}</>;
 };
@@ -29,6 +32,8 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 import { CustomCursor } from './components/CustomCursor';
 
 function App() {
+  const [isInitializing, setIsInitializing] = useState(true);
+
   useEffect(() => {
     // Global patch for SVG path "undefined" error
     const observer = new MutationObserver((mutations) => {
@@ -55,7 +60,12 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <CustomCursor />
-        <Routes>
+        {isInitializing ? (
+          <GrandLoadingScreen onComplete={() => setIsInitializing(false)} />
+        ) : (
+          <>
+            <ConstellationCanvas />
+            <Routes>
           {/* Landing page (No Layout) */}
           <Route path="/" element={<LandingPage />} />
           
@@ -95,6 +105,8 @@ function App() {
            {/* Fallback */}
            <Route path="*" element={<Navigate to="/" replace />} />
          </Routes>
+         </>
+        )}
        </ToastProvider>
      </AuthProvider>
    );
