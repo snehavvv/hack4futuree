@@ -1,0 +1,99 @@
+# Self-Hosted Supabase Docker Setup — Walkthrough
+
+## Summary
+
+Set up a complete self-hosted Supabase instance under `supabase/` in the SquintScale project with **16 files** created/modified:
+
+## File Structure
+
+```
+squintscale/
+├── .env.example                          ← updated (added Supabase reference)
+└── supabase/
+    ├── .env.example                      ← all environment variables
+    ├── docker-compose.yml                ← 13 services
+    └── volumes/
+        ├── api/
+        │   ├── kong.yml                  ← API gateway routing
+        │   └── kong-entrypoint.sh        ← env var substitution
+        ├── db/
+        │   ├── _supabase.sql             ← internal DB
+        │   ├── jwt.sql                   ← JWT settings
+        │   ├── logs.sql                  ← analytics schema
+        │   ├── pooler.sql                ← pooler schema
+        │   ├── realtime.sql              ← realtime schema
+        │   ├── roles.sql                 ← Postgres roles
+        │   ├── webhooks.sql              ← webhook infra
+        │   └── migrations/
+        │       └── 20240101000000_squintscale_schema.sql  ← ★ main schema
+        ├── functions/main/index.ts       ← edge function placeholder
+        ├── logs/vector.yml               ← log collector config
+        └── pooler/pooler.exs             ← connection pooler config
+```
+
+## Services (docker-compose.yml)
+
+| Service | Image | Exposed Port |
+|---|---|---|
+| **studio** | supabase/studio | via Kong (`/`) |
+| **kong** | kong/kong:3.9.1 | **8000** (HTTP), 8443 (HTTPS) |
+| **auth** | supabase/gotrue | via Kong (`/auth/v1/`) |
+| **rest** | postgrest/postgrest | via Kong (`/rest/v1/`) |
+| **realtime** | supabase/realtime | via Kong (`/realtime/v1/`) |
+| **storage** | supabase/storage-api | via Kong (`/storage/v1/`) |
+| **imgproxy** | darthsim/imgproxy | internal |
+| **meta** | supabase/postgres-meta | via Kong (`/pg/`) |
+| **functions** | supabase/edge-runtime | via Kong (`/functions/v1/`) |
+| **analytics** | supabase/logflare | internal |
+| **db** | supabase/postgres:15 | internal (5432) |
+| **vector** | timberio/vector | internal |
+| **supavisor** | supabase/supavisor | **5432** (DB), **6543** (pooler) |
+
+## Database Schema
+
+### Tables
+
+| Table | Purpose | Key Constraints |
+|---|---|---|
+| `profiles` | User profiles (extends auth.users) | `account_tier` CHECK, PK = auth.users FK |
+| `analyses` | Squint-test analysis jobs | `input_type` CHECK, `status` CHECK, FK to auth.users |
+| `analysis_metrics` | Detailed metric breakdown | FK to analyses |
+| `suggestions` | Improvement suggestions | `severity` CHECK, FK to analyses |
+| `reports` | Generated reports | FK to analyses + auth.users |
+
+### RLS Policies
+All 5 tables have RLS enabled. Policies ensure users can only access their own data:
+- **profiles**: SELECT, INSERT, UPDATE own row (matched by `auth.uid() = id`)
+- **analyses**: SELECT, INSERT, UPDATE, DELETE own rows (matched by `auth.uid() = user_id`)
+- **analysis_metrics/suggestions**: SELECT, INSERT via join to analyses owned by user
+- **reports**: SELECT, INSERT, DELETE own rows
+
+### Triggers
+- `on_profiles_updated` / `on_analyses_updated`: auto-sets `updated_at = now()` on UPDATE
+- `on_auth_user_created`: auto-inserts a `profiles` row when a user signs up, pulling `display_name` and `avatar_url` from user metadata
+
+### Storage
+- Bucket **`squint-images`**: private, 10MB limit, image MIME types only
+- Per-user folder policies: files stored under `squint-images/{user_id}/...`
+
+## How to Use
+
+```bash
+# 1. Navigate to supabase directory
+cd supabase
+
+# 2. Copy env template and fill in your secrets
+cp .env.example .env
+# Edit .env — change ALL passwords, JWT secrets, and API keys
+
+# 3. Start all services
+docker compose up -d
+
+# 4. Access Supabase
+# Dashboard:  http://localhost:8000  (login with DASHBOARD_USERNAME/PASSWORD)
+# API:        http://localhost:8000/rest/v1/
+# Database:   localhost:5432  (via Supavisor pooler)
+```
+
+> [!IMPORTANT]
+> Before deploying, **change every secret** in `.env`. The defaults are insecure demo values.

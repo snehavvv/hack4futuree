@@ -1,0 +1,29 @@
+# PDF Intelligence Reports — Walkthrough
+
+## Summary 
+Successfully implemented automated PDF accessibility generation via `WeasyPrint` on the backend, integrated secure document storage into Supabase, and updated the React frontend to natively request, open, and handle these PDF intel reports directly from the Results Page.
+
+## Backend Implementations
+
+### PDF Rendering ([app/routers/reports.py](file:///f:/C%20drive%20data/squintscale/backend/app/routers/reports.py))
+- Created full declarative `REPORT_TEMPLATE` using `Jinja2` formatting to map database metrics cleanly into an aesthetically pleasing, branded HTML structure.
+- **`POST /api/v1/reports/{analysis_id}`**:
+  - Validates ownership, accesses [analyses](file:///f:/C%20drive%20data/squintscale/backend/app/routers/analyses.py#178-204), [analysis_metrics](file:///f:/C%20drive%20data/squintscale/backend/app/routers/analyses.py#273-296), and [suggestions](file:///f:/C%20drive%20data/squintscale/backend/app/services/suggestions.py#10-129), and securely grabs signed image captures from Supabase internal paths using the Service Key.
+  - Converts compiled HTML string to in-process memory bytes using `WeasyPrint.HTML()`. 
+  - Immediately pushes the artifact onto Supabase Storage under `/{user_id}/reports/{analysis_id}.pdf`.
+  - Stamps a record into the new `reports` DB table.
+  - Generates and returns a 24-hour expiration secure signed URL.
+- **`GET /api/v1/reports/{analysis_id}`**:
+  - High-performance route allowing frontends to re-ping previous downloads without infinitely regenerating new PDFs. 
+
+### Database & Docker
+- Added a new structured SQL Migration: [20240101000000_add_reports_table.sql](file:///f:/C%20drive%20data/squintscale/supabase/migrations/20240101000000_add_reports_table.sql).
+- Injected explicitly required native system C-Libraries into the [Dockerfile](file:///f:/C%20drive%20data/squintscale/backend/Dockerfile) runtime block (`libpango`, `libcairo`, etc.) to satiate `WeasyPrint` headless rendering.
+
+## Frontend Implementations
+
+### PDF Downloader ([src/pages/ResultsPage.tsx](file:///f:/C%20drive%20data/squintscale/src/pages/ResultsPage.tsx))
+- Rip/replaced the dummy client-side export stub with async HTTP `apiClient` networking.
+- Checks if the PDF exists (`GET`). If not built yet, intelligently falls back to building it lazily (`POST`).
+- Opens the secure signed URL instantly in a new browser window/tab (`_blank`).
+- Features a smooth `disabled` spinning state while waiting for the multi-second backend generation to execute.

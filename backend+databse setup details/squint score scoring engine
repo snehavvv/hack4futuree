@@ -1,0 +1,30 @@
+# Squint Score Scoring Engine — Walkthrough
+
+## Summary
+Successfully implemented the computer vision scoring engine responsible for calculating the **Squint Score** for the FastAPI Backend. This processes an image and provides a heavily scrutinized 1-100 metric and classification band based on physical and visual human impairments. 
+
+## 1. Engine Metrics ([app/services/scoring.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py))
+All algorithms strictly accept an OpenCV numpy array (`image: np.ndarray`) and return a normalized generic `0.0 - 100.0` score representing how "accessible" that element is.
+
+- **[compute_contrast_score()](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#19-65)**:
+  - Leverages OpenCV LAB color space to isolate luminosity.
+  - Extracts distinct foreground and background object clusters via dilated `Canny()` edge detection.
+  - Computes the median luminance ratio and calculates it directly against the official WCAG specifications (e.g. 4.5:1 `AA` or 7:1 `AAA`).
+- **[compute_font_size_score()](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#67-97)**:
+  - Connects to Tesseract OCR to extract character bounding box heights across the document.
+  - Generates a running average height. It perfectly standardizes any average above `16px` as a `100` score and steeply penalizes anything smaller on a normalized scale.
+- **[compute_visual_clutter_score()](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#99-122)**:
+  - Establishes a visual cognitive footprint. Extracts the entire structural node skeleton of the app and calculates structural percentage density. Extremely cluttered apps (high density) fall rapidly strictly toward `0`.
+- **[compute_color_accessibility_score()](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#124-151)**:
+  - Leverages the structural similarity index (SSIM) algorithm via `scikit-image`.
+  - It constructs a simulation of how a user with severe *Deuteranopia* (red/green colorblindness) sees the image. Then, it measures whether visual structure or contrast was lost when the color encoding shifted. Loss of structure pushes the score dynamically towards 0.
+- **[compute_squint_score(metrics)](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#153-198)**:
+  - Serves as the global weighted aggregator function. It calculates the final overall [(score, band_label)](file:///f:/C%20drive%20data/squintscale/src/App.tsx#30-96) based on exact spec: OCR Retention (35%), Contrast (25%), Font height (20%), Visual Clutter (10%), and Color Access (10%). Band labels directly correspond to strict 15-point thresholds.
+
+## 2. Service Orchestrator Pipeline ([app/services/analysis_service.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/analysis_service.py))
+- Rewrote [trigger_analysis_job](file:///f:/C%20drive%20data/squintscale/backend/app/services/analysis_service.py#24-115) internally to utilize async DB transactions natively by locking the [get_pool()](file:///f:/C%20drive%20data/squintscale/backend/app/database.py#47-52).
+- Validates that the original ID exists and safely advances status to `processing`.
+- *Pipeline Flow:* Processes the dummy image locally inside the event loop -> Runs all 4 vision metrics -> Combines them for the unified Squint Score via aggregator -> Pushes all values structurally to `public.analysis_metrics` dict -> Recursively updates the root `public.analyses` task metadata (Status: `completed`, appending [squint_score](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#153-198) and `band_label`).
+- Safely captures any global exception during evaluation and properly terminates with `status = 'failed'` to avoid ghost operations remaining in the background.
+
+*Note: Phase 3 will tie this precisely to the exact downloaded S3 bucket files and compute differential delta via actual OCR parsing over the simulation copies.*

@@ -1,0 +1,41 @@
+# Supabase Auth Integration — Walkthrough
+
+## Summary
+
+Successfully wired up **Supabase Auth** to the React frontend, removing all mock logic. The application now uses the real Supabase JS client to manage sessions, protect routes, and communicate securely with the FastAPI backend.
+
+## Key Changes
+
+1. **[src/lib/supabaseClient.ts](file:///f:/C%20drive%20data/squintscale/src/lib/supabaseClient.ts)**
+   - Created a strict Supabase client that reads `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+   - Removed the permissive placeholder logic.
+
+2. **[src/contexts/AuthContext.tsx](file:///f:/C%20drive%20data/squintscale/src/contexts/AuthContext.tsx)**
+   - **Real Auth:** Integrated `supabase.auth.getSession()` on mount and `supabase.auth.onAuthStateChange()` for reactive updates.
+   - **Exposed Session:** Now exposes the full Supabase `Session` object so the raw JWT can be accessed.
+   - **Email Confirmation:** `signUp` now returns a `{ confirmEmail: boolean }` flag for proper UI handling.
+
+3. **[src/lib/apiClient.ts](file:///f:/C%20drive%20data/squintscale/src/lib/apiClient.ts)**
+   - Created a centralized Axios instance pointing to `VITE_API_URL`.
+   - **Token Injection:** Uses a request interceptor to automatically attach `Bearer <jwt>` from the active Supabase session.
+   - **Auth Expiry Handling:** Uses a response interceptor to catch `401 Unauthorized` errors, automatically invoking `supabase.auth.signOut()` and redirecting to `/login`.
+
+4. **[src/App.tsx](file:///f:/C%20drive%20data/squintscale/src/App.tsx) (ProtectedRoute)**
+   - Replaced mock permissive bypass with strict enforcement: redirects unauthenticated users to `/login`.
+
+5. **[src/pages/RegisterPage.tsx](file:///f:/C%20drive%20data/squintscale/src/pages/RegisterPage.tsx)**
+   - Added conditional UI to display a clearly styled "Check your email" panel if the backend requires email confirmation after sign-up.
+
+6. **[src/pages/LoginPage.tsx](file:///f:/C%20drive%20data/squintscale/src/pages/LoginPage.tsx)**
+   - Updated the generic error message to display the actual `error.message` returned by Supabase for better UX on invalid credentials.
+
+7. **Environment Variables**
+   - Updated [.env.example](file:///f:/C%20drive%20data/squintscale/.env.example) to define `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_API_URL`.
+
+## How to Test
+
+1. **Start Supabase & Backend:** Ensure your Docker Compose stack and FastAPI server are running.
+2. **Setup Env:** Copy [squintscale/.env.example](file:///f:/C%20drive%20data/squintscale/.env.example) to `.env` and fill in the Local Supabase anon key (from the Supabase Studio dashboard).
+3. **Register:** Try signing up on `/register`.
+4. **Login:** Log in on `/login` and verify you reach the dashboard (`/upload`).
+5. **API Auth:** The `apiClient` will automatically securely relay your `Authorization: Bearer <token>` to the backend for all API calls.

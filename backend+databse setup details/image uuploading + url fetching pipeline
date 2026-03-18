@@ -1,0 +1,39 @@
+# Analysis Upload Pipeline — Walkthrough
+
+## Summary
+Successfully implemented the image upload and URL fetching pipeline for the **SquintScale FastAPI Backend**, integrating directly with the self-hosted Supabase Storage.
+
+## Key Additions
+
+1. **Supabase Python Client**
+   - Added `supabase==2.12.0` to [requirements.txt](file:///f:/C%20drive%20data/squintscale/backend/requirements.txt).
+   - Initialized a singleton client in [app/utils/supabase.py](file:///f:/C%20drive%20data/squintscale/backend/app/utils/supabase.py) using the `SUPABASE_SERVICE_KEY`. *This allows the backend to perform admin-level trusted storage operations bypassing RLS.*
+
+2. **Storage Service ([app/services/storage.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/storage.py))**
+   - **[upload_image_to_storage](file:///f:/C%20drive%20data/squintscale/backend/app/services/storage.py#17-50)**: Uploads raw image bytes to the `squint-images` bucket. The file is mapped to `{user_id}/originals/{analysis_id}.{ext}` and the public URL is returned.
+   - **[delete_image_from_storage](file:///f:/C%20drive%20data/squintscale/backend/app/services/storage.py#52-78)**: Cleans up files associated with a specific analysis ID.
+
+3. **Background Orchestrator Stub**
+   - Created [app/services/analysis_service.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/analysis_service.py) with [trigger_analysis_job(analysis_id)](file:///f:/C%20drive%20data/squintscale/backend/app/services/analysis_service.py#16-29). This stub simulates kicking off the actual heavy vision processing pipeline in the background using FastAPI's `BackgroundTasks`.
+
+## Endpoint Updates ([app/routers/analyses.py](file:///f:/C%20drive%20data/squintscale/backend/app/routers/analyses.py))
+
+### 📤 `POST /api/v1/analyses/upload`
+- Accepts `multipart/form-data` with a [file](file:///f:/C%20drive%20data/squintscale/backend/Dockerfile) (image constraint: jpeg, png, webp; max 10MB) and an optional `wcag_level` (default AA).
+- Inserts a new DB row with status `queued`, returning the unique `analysis_id`.
+- Uploads the image to storage, saves the public URL to the `original_image_path` column, and queues the background orchestrator.
+- If upload fails, gracefully rolls back the DB insertion.
+
+### 🌐 `POST /api/v1/analyses/url`
+- Accepts JSON `{ "url": "https://...", "wcag_level": "AAA" }`.
+- Leverages asynchronous `httpx` to download the image, validating both size and HTTP content-type (MIME type).
+- Passes the downloaded bytes through the exact same storage & queuing pipeline as the file upload.
+
+### 📋 `GET /api/v1/analyses/`
+- Implemented **pagination** (`?page=1&limit=20`) and **status filtering** (`?status_filter=completed`).
+- Orders results securely by `created_at DESC` via asyncpg.
+
+### 🗑️ `DELETE /api/v1/analyses/{id}`
+- Triggers a secure SQL `DELETE` row wipe (which cascades related data) and concurrently calls [delete_image_from_storage](file:///f:/C%20drive%20data/squintscale/backend/app/services/storage.py#52-78) to purge the physical file from the Supabase bucket.
+
+All endpoints securely extract the user's UUID from the JWT via the existing [get_current_user](file:///f:/C%20drive%20data/squintscale/backend/app/routers/auth.py#32-57) dependency. Matches requested spec exactly.

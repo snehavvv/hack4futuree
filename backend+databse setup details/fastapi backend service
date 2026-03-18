@@ -1,0 +1,87 @@
+# FastAPI Backend Service — Walkthrough
+
+## Summary
+
+Created a complete **FastAPI backend** under `backend/` with 12 files — JWT-authenticated REST API, async PostgreSQL, structured JSON logging, and a production-ready Dockerfile.
+
+## File Structure
+
+```
+backend/
+├── .env.example              ← all env vars (never committed)
+├── requirements.txt           ← pinned Python deps
+├── Dockerfile                 ← multi-stage build with tesseract + opencv
+└── app/
+    ├── main.py                ← FastAPI app, lifespan, CORS, health check
+    ├── config.py              ← pydantic-settings from .env
+    ├── database.py            ← asyncpg pool (connect/disconnect/check)
+    ├── models/
+    │   └── schemas.py         ← Pydantic request/response models
+    ├── routers/
+    │   ├── auth.py            ← JWT middleware + profile endpoints
+    │   ├── analyses.py        ← CRUD + metrics + suggestions
+    │   └── reports.py         ← CRUD with ownership checks
+    ├── services/
+    │   └── __init__.py        ← business logic placeholder
+    └── utils/
+        └── logging.py         ← structured JSON logging
+```
+
+## API Endpoints
+
+All routes under **`/api/v1`**:
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/health` | ✗ | DB + Tesseract health check |
+| `GET` | `/auth/me` | ✓ | Get current user's profile |
+| `PATCH` | `/auth/me` | ✓ | Update profile fields |
+| `GET` | `/analyses/` | ✓ | List user's analyses |
+| `POST` | `/analyses/` | ✓ | Create new analysis |
+| `GET` | `/analyses/{id}` | ✓ | Get single analysis |
+| `DELETE` | `/analyses/{id}` | ✓ | Delete analysis (cascades) |
+| `GET` | `/analyses/{id}/metrics` | ✓ | Get detailed metrics |
+| `GET` | `/analyses/{id}/suggestions` | ✓ | Get improvement suggestions |
+| `GET` | `/reports/` | ✓ | List user's reports |
+| `POST` | `/reports/` | ✓ | Create report (requires completed analysis) |
+| `GET` | `/reports/{id}` | ✓ | Get single report |
+| `DELETE` | `/reports/{id}` | ✓ | Delete report |
+
+## JWT Authentication Flow
+
+1. Client sends `Authorization: Bearer <supabase-jwt>` header
+2. [get_current_user](file:///f:/C%20drive%20data/squintscale/backend/app/routers/auth.py#32-57) dependency decodes JWT with `SUPABASE_JWT_SECRET` (HS256)
+3. Validates `aud == "authenticated"` and extracts `sub` (user UUID)
+4. Returns 401 if invalid/expired
+
+## Health Check Response
+
+```json
+{
+  "status": "ok",
+  "version": "1.0.0",
+  "db": "connected",
+  "tesseract": "available"
+}
+```
+
+## How to Run
+
+### Docker
+```bash
+cd backend
+cp .env.example .env   # fill in real values
+docker build -t squintscale-backend .
+docker run -p 8080:8080 --env-file .env squintscale-backend
+```
+
+### Local (dev)
+```bash
+cd backend
+pip install -r requirements.txt
+cp .env.example .env   # fill in real values
+uvicorn app.main:app --reload --port 8080
+```
+
+> [!IMPORTANT]
+> The backend expects Supabase Postgres to be running. Start the Supabase Docker stack first (`cd supabase && docker compose up -d`), then launch the backend.

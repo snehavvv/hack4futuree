@@ -1,0 +1,40 @@
+# Background Async Job Queue & Polling
+
+The goal is to implement MVP background job processing in the FastAPI backend without external dependencies like Redis or Celery, using a robust Python `ThreadPoolExecutor`. The frontend will poll the API for updates.
+
+## Proposed Changes
+
+### Backend Components
+
+#### [NEW] `app/services/job_queue.py`
+- Create a global `ThreadPoolExecutor` (max 4 workers).
+- Define `enqueue_analysis(analysis_id, user_id)`:
+  - Submits `run_full_analysis` to the thread pool wrapper dynamically.
+  - Wraps the execution with a `try/except` block to guarantee any unhandled exceptions are caught and explicitly mark the [analyses](file:///f:/C%20drive%20data/squintscale/backend/app/routers/analyses.py#180-206) DB record status as `failed` with the `error_reason`.
+
+#### [MODIFY] [app/main.py](file:///f:/C%20drive%20data/squintscale/backend/app/main.py)
+- Import `get_executor` and `shutdown_executor`.
+- Update the FastAPI [lifespan](file:///f:/C%20drive%20data/squintscale/backend/app/main.py#31-42) manager to start the executor on startup and cleanly shut it down (`wait=True`) during shutdown, ensuring no jobs randomly die mid-flight when the server stops.
+
+#### [MODIFY] [app/services/analysis_service.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/analysis_service.py)
+- Rename [trigger_analysis_job](file:///f:/C%20drive%20data/squintscale/backend/app/services/analysis_service.py#24-140) to `run_full_analysis`.
+- Ensure the very first asyncpg DB write correctly moves the status to `processing`. (Already implemented, will just verify the name change and signature propagation).
+
+#### [MODIFY] [app/models/schemas.py](file:///f:/C%20drive%20data/squintscale/backend/app/models/schemas.py)
+- Add `AnalysisStatusResponse(BaseModel)` to formally type-check the new GET status polling endpoint payload (`analysis_id`, `status`, `error_reason`).
+
+#### [MODIFY] [app/routers/analyses.py](file:///f:/C%20drive%20data/squintscale/backend/app/routers/analyses.py)
+- Remove FastAPI `BackgroundTasks` injections.
+- In `POST /upload` and `POST /url`, directly invoke `enqueue_analysis(analysis_id, user_id)` after the record is created.
+- Add an entirely new endpoint `GET /{analysis_id}/status` that performs an ultra-fast query on the DB just to fetch the `status` and `error_reason` strings to satisfy the frontend poller.
+
+---
+
+### Frontend Components
+
+#### [MODIFY] [src/pages/UploadPage.tsx](file:///f:/C%20drive%20data/squintscale/src/pages/UploadPage.tsx)
+- Refactor how the page monitors state after an upload. Currently, it waits for `startAnalysis` (which in `useAnalysis` likely blocks entirely or waits synchronously). 
+- Modify `useAnalysis` / [UploadPage](file:///f:/C%20drive%20data/squintscale/src/pages/UploadPage.tsx#38-281) to start a `setInterval` running every 2 seconds hitting the new `GET /api/v1/analyses/{analysis_id}/status` endpoint.
+- Add lifecycle hooks to clear the interval upon unmount or transition.
+- When polling sees `completed`, navigate the user forcefully to `/results/{analysis_id}`.
+- When polling sees `failed`, render the error visibly instead of getting stuck loading.

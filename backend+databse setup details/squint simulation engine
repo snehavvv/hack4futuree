@@ -1,0 +1,30 @@
+# Squint Simulation Engine & Utilities — Walkthrough
+
+## Summary
+Successfully implemented the core computer vision simulation engine and accompanying image utilities for the **SquintScale FastAPI Backend**. The module runs natively via `opencv-python-headless` and `numpy`, making it independent, fast, and completely deterministic.
+
+## Image Processing Handlers
+
+### 1. Image Utilities ([app/services/image_utils.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/image_utils.py))
+- **[load_image_from_bytes(data: bytes)](file:///f:/C%20drive%20data/squintscale/backend/app/services/image_utils.py#11-25)**: Seamlessly converts memory raw bytes from file uploads or HTTP streams into OpenCV multidimensional NumPy `BGR` arrays, catching arbitrary decoding failures.
+- **[image_to_bytes(image: np.ndarray, format: str)](file:///f:/C%20drive%20data/squintscale/backend/app/services/image_utils.py#27-40)**: Rapidly flushes OpenCV arrays back into memory streams (like `PNG` or `JPEG`) for uploading directly back to Supabase.
+- **[get_image_dimensions(image)](file:///f:/C%20drive%20data/squintscale/backend/app/services/image_utils.py#42-49)**: Extracts resolution geometry via array shaping.
+
+### 2. Simulation Engine ([app/services/simulation.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/simulation.py))
+Each deterministic function receives a [(H, W, 3)](file:///f:/C%20drive%20data/squintscale/src/App.tsx#30-96) `uint8` image array and returns a fully mapped array without mutating the origin matrix.
+
+- **[apply_gaussian_blur(..., sigma)](file:///f:/C%20drive%20data/squintscale/backend/app/services/simulation.py#12-22)**:
+  - Dynamically projects a low-pass Gaussian filter to mimic myopia and distance degradation.
+- **[apply_contrast_reduction(..., factor)](file:///f:/C%20drive%20data/squintscale/backend/app/services/simulation.py#24-39)**:
+  - Blends the original pixels mathematically against a neutral 128 mid-gray matrix (simulating poor ambient lighting or cataracts/low contrast UI).
+- **[apply_glare(..., intensity)](file:///f:/C%20drive%20data/squintscale/backend/app/services/simulation.py#41-88)**:
+  - Constructs a heavy Gaussian-blurred, normalized elliptical bright spot mask biased toward the top-center of the geometry. Then linearly interpolates this onto the image via 3-channel broadcasting. Simulates harsh sunlight hitting a screen/poster.
+- **[apply_noise(..., std)](file:///f:/C%20drive%20data/squintscale/backend/app/services/simulation.py#90-108)**:
+  - Drops a strictly deterministic (seeded `42`), globally distributed static normal noise over the float layer of the image to mimic lossy displays or bad ink coverage.
+- **[apply_color_deficiency(..., mode)](file:///f:/C%20drive%20data/squintscale/backend/app/services/simulation.py#110-157)**:
+  - Converts BGR to RGB linear layers. Then multiplies the standard LMS transformation matrices [(3x3)](file:///f:/C%20drive%20data/squintscale/src/App.tsx#30-96) over the input pixels (simulating `deuteranopia`, `protanopia`, or `tritanopia`), before reverting back to displayable BGR colors space.
+
+### 3. Engine Master Pipeline
+- **[apply_squint_simulation(image, params)](file:///f:/C%20drive%20data/squintscale/backend/app/services/simulation.py#159-190)**:
+  - An orchestrator that dynamically sequences transformations in their statistically ideal order—`Blur -> Contrast -> Glare -> Noise`.
+  - Driven by the default configured config tuning set out for standard Squint testing: `{ blur_sigma: 3.0, contrast_factor: 0.5, glare_intensity: 0.2, noise_std: 10.0 }`.

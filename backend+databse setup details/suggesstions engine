@@ -1,0 +1,31 @@
+# Actionable Suggestions Engine — Walkthrough
+
+## Summary
+Successfully implemented the **Actionable Suggestions Engine** responsible for digesting raw computer-vision metrics and providing developers/designers with prioritized heuristical feedback.
+
+## 1. Rules Engine ([app/services/suggestions.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/suggestions.py))
+Created a standalone [generate_suggestions()](file:///f:/C%20drive%20data/squintscale/backend/app/services/suggestions.py#10-129) function mapping [metrics](file:///f:/C%20drive%20data/squintscale/backend/app/routers/analyses.py#250-273) -> `list[dict]` using standardized human visual thresholds:
+
+- **Contrast Rules ([contrast_score](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#19-65))**:
+  - `<40`: **Critical** (Below critical reading contrast). Recommends +60 luminance shift.
+  - `40–64`: **High** (Fails WCAG AA minimum testing).
+  - `65–79`: **Medium** (Borderline/Warns about sun-glare).
+- **Legibility Rules ([font_size_score](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#67-97))**:
+  - `<40`: **Critical** (Physically unreadable text below 8px).
+  - `40–64`: **High** (Warns about mild presbyopia access limits and suggests bumping up line-heights).
+- **Cognitive Load Rules ([visual_clutter_score](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#99-122))**:
+  - `<40`: **High** (Excessive UI density detected. Suggests padding/margins).
+  - `40–59`: **Medium** (Moderate density, recommends element grouping).
+- **Color Perception Rules ([color_accessibility_score](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#124-151))**:
+  - `<50`: **High** (SSIM indicates severe structure loss under deuteranopia simulation. Suggests independent patterning instead of raw color encoding).
+- **Simulation Delta Rules (`ocr_retention_rate`)**:
+  - `< 0.5`: **Critical** (<50% survival under simulated conditions).
+  - `0.5 - 0.74`: **High** (Critical info likely unreadable under poor viewing).
+
+All generated suggestions are automatically assigned a dynamic `expected_score_lift` value.
+Before returning, the engine rigorously sorts the output by **Severity Level (`Critical` -> `High` -> ...)** and subsequently by **Expected Score Lift (Descending)**, guaranteeing the most critical accessibility fixes are ranked `1`.
+
+## 2. DB Orchestration ([app/services/analysis_service.py](file:///f:/C%20drive%20data/squintscale/backend/app/services/analysis_service.py))
+- Integrated [generate_suggestions()](file:///f:/C%20drive%20data/squintscale/backend/app/services/suggestions.py#10-129) immediately after the [compute_squint_score()](file:///f:/C%20drive%20data/squintscale/backend/app/services/scoring.py#153-198) matrix.
+- Structured an `asyncpg.executemany()` operation mapping the returned Python dicts onto robust SQL tuples.
+- Ensures all suggestions are persisted in a single bulk transaction to the `public.suggestions` database table safely alongside the master metric table update.

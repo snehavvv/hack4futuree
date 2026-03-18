@@ -1,0 +1,21 @@
+# Deployment & Infrastructure — Walkthrough
+
+## Summary 
+Successfully configured the complete local Docker development pipeline, Supabase initialization mechanics, and the Render PaaS deployment specifications for the SquintScale ecosystem.
+
+## Docker Builds
+- Rewrote [backend/Dockerfile](file:///f:/C%20drive%20data/squintscale/backend/Dockerfile) to base strictly off `python:3.11-slim`, re-ordered the layer cache copies to isolate `pip install` from app code, and injected all missing systemic libraries (`libgdk-pixbuf2.0-0`, `libpango-1.0-0`, etc.) targeting WeasyPrint and internal OCR headless systems.
+- Wrote two distinct bash runners: [backend/build.sh](file:///f:/C%20drive%20data/squintscale/backend/build.sh) and [backend/run.sh](file:///f:/C%20drive%20data/squintscale/backend/run.sh) to construct and execute the backend seamlessly via Docker CLI for Windows/Linux interoperability.
+
+## Environment Architecture
+- Created [backend/.env.example](file:///f:/C%20drive%20data/squintscale/backend/.env.example) mapping internal Docker mechanics exclusively to `host.docker.internal` so the container natively pierces out to the host-running Supabase DB.
+- Re-architected [/.env.example](file:///f:/C%20drive%20data/squintscale/.env.example) at the Vite root to use strict `localhost` mechanics ensuring the host frontend speaks cleanly to both host-exposed Supabase ports and containerized Backend ports.
+
+## DB & Server Safeguards
+- Created [supabase/migrations/20250001000000_init.sql](file:///f:/C%20drive%20data/squintscale/supabase/migrations/20250001000000_init.sql) master initialization layer. This fully encapsulates all 5 relation tables, internal PostgreSQL triggers executing on Auth user sign-up, rigorous Row-Level-Security across all bounds, and the deployment of the private Storage container rules spanning the entire data lifecycle.
+- Embedded a 3-Step fail-safe inside [backend/app/main.py](file:///f:/C%20drive%20data/squintscale/backend/app/main.py). Upon boot, the server forcefully verifies `asyncpg` execution viability, Tesseract CLI resolution paths, and Supabase Storage bucket presence — deliberately halting the server from entering a zombie state if dependencies fail.
+
+## PaaS Deployment
+- Wrote [render.yaml](file:///f:/C%20drive%20data/squintscale/render.yaml) fully mapping the Infrastructure-as-Code requirements. Features a split architecture deploying the Dockerized backend to a `web` module, and orchestrating an NPM Vite static builder translating into a rewritten `static` node target.
+- Formatted [README.md](file:///f:/C%20drive%20data/squintscale/README.md) comprehensively covering execution sequence, Docker routing logic, environments strings, and multi-stage manual setup.
+- Appended [backend/.env](file:///f:/C%20drive%20data/squintscale/backend/.env) and temporary Supabase/Python states to [.gitignore](file:///f:/C%20drive%20data/squintscale/.gitignore).
