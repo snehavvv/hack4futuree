@@ -50,7 +50,7 @@ export const Layout: React.FC = () => {
 
   return (
     <ReactLenis root>
-      <div className="flex min-h-screen bg-bg-base text-text-primary overflow-hidden relative font-body cursor-none">
+      <div className="flex min-h-screen bg-bg-base text-text-primary overflow-x-hidden relative font-body cursor-none">
         <CustomCursor />
         <PageTransitionLoader />
         {/* Background System */}
@@ -64,7 +64,7 @@ export const Layout: React.FC = () => {
 
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative z-10">
+      <main className="flex-1 flex flex-col min-w-0 min-h-screen relative z-10">
         {/* Top Navbar */}
         <header className="h-[90px] flex items-center justify-between px-10 border-b border-white/5 glass sticky top-0 z-[60] rounded-none border-x-0 border-t-0 bg-bg-base/60 backdrop-blur-3xl">
           <div className="flex items-center gap-10">
@@ -98,7 +98,7 @@ export const Layout: React.FC = () => {
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto px-10 py-12 custom-scrollbar relative bg-grain">
+        <div className="flex-1 px-10 py-12 relative bg-grain">
           <div className="max-w-[1400px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div

@@ -10,9 +10,10 @@ import { HistoryPage } from './pages/HistoryPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { DashboardPage } from './pages/DashboardPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
   
   if (loading) return (
     <div className="min-h-screen bg-bg-primary flex items-center justify-center">
@@ -20,8 +21,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     </div>
   );
   
-  // For demo purposes, we'll allow access even if not authenticated if mock mode is on
-  // But usually: if (!isAuthenticated) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" replace />;
   
   return <>{children}</>;
 };
@@ -65,6 +65,11 @@ function App() {
           
           {/* Dashboard pages (With Layout) */}
           <Route element={<Layout />}>
+             <Route path="/dashboard" element={
+               <ProtectedRoute>
+                 <DashboardPage />
+               </ProtectedRoute>
+             } />
             <Route path="/upload" element={
               <ProtectedRoute>
                  <UploadPage />

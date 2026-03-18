@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/upload', icon: Upload, label: 'Direct Upload' },
     { to: '/history', icon: History, label: 'Analysis History' },
     { to: '/settings', icon: Settings, label: 'Settings' },
@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           x: isOpen ? 0 : -300,
           width: isOpen ? 260 : 0
         }}
-        className="fixed lg:static top-0 left-0 bottom-0 z-[500] glass border-r border-white/5 h-screen flex flex-col transition-all duration-300 overflow-hidden rounded-none border-y-0 border-l-0"
+        className="fixed lg:sticky top-0 left-0 bottom-0 z-[500] glass border-r border-white/5 h-screen flex flex-col transition-all duration-300 overflow-hidden rounded-none border-y-0 border-l-0"
       >
         <div className="p-10 flex items-center justify-between">
           <div className="flex items-center gap-5">
