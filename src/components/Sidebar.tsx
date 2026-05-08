@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Upload, 
@@ -46,8 +46,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
 
   const navItems = [
-    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/upload', icon: Upload, label: 'Direct Upload' },
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/history', icon: History, label: 'Analysis History' },
     { to: '/settings', icon: Settings, label: 'Settings' },
   ];
@@ -76,14 +76,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         className="fixed lg:sticky top-0 left-0 bottom-0 z-[500] glass border-r border-white/5 h-screen flex flex-col transition-all duration-300 overflow-hidden rounded-none border-y-0 border-l-0"
       >
         <div className="p-10 flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div className="w-12 h-12 bg-text-primary rounded-2xl flex items-center justify-center shadow-2xl">
-              <Eye size={28} className="text-bg-primary" />
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
+            <img src="/logo.png" alt="SquintScale Logo" className="w-12 h-12 object-contain shadow-glow-premium rounded-2xl" />
             <span className="text-3xl font-display font-black tracking-tighter text-text-primary uppercase leading-none">
               Squint<span className="opacity-20">Scale</span>
             </span>
-          </div>
+          </Link>
           <button onClick={onClose} className="lg:hidden p-3 text-text-muted hover:text-text-primary glass rounded-xl border-white/5">
             <X size={24} />
           </button>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { PageTransitionLoader } from './PageTransitionLoader';
 import { MagneticHamburger } from './MagneticHamburger';
 import { CustomCursor } from './CustomCursor';
-import { ReactLenis } from '@studio-freight/react-lenis';
+import { ReactLenis } from 'lenis/react';
 import { Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -68,12 +68,13 @@ export const Layout: React.FC = () => {
             <div className="lg:hidden relative z-[1000] -ml-2">
               <MagneticHamburger isOpen={isSidebarOpen} onClick={() => setIsSidebarOpen(!isSidebarOpen)} />
             </div>
-            <div className="flex flex-col">
+            <Link to="/dashboard" className="flex items-center gap-4 hover:opacity-80 transition-opacity group">
+              <img src="/logo.png" alt="SquintScale Logo" className="w-11 h-11 object-contain shadow-glow-premium rounded-xl group-hover:scale-110 transition-transform duration-500" />
               <h2 className="text-3xl font-display font-black text-text-primary tracking-tighter leading-none flex items-center gap-2 uppercase">
-                Squint<span className="text-text-primary opacity-30">Scale</span>
-                <span className="text-[10px] pb-2 opacity-10 font-mono tracking-tighter ml-1">v2.1</span>
+                Squint<span className="text-text-primary opacity-50 group-hover:opacity-100 transition-opacity">Scale</span>
+                <span className="text-[10px] pb-1.5 opacity-20 font-mono tracking-tighter ml-1">v2.2</span>
               </h2>
-            </div>
+            </Link>
           </div>
 
           <div className="flex items-center gap-6">
@@ -81,14 +82,13 @@ export const Layout: React.FC = () => {
             <button className="p-3 text-text-muted hover:text-text-primary transition-colors glass border-white/5 rounded-2xl">
               <Bell size={20} className="stroke-[1.5]" />
             </button>
-            <div className="h-10 w-[1px] bg-white/5 mx-2" />
-            <button className="flex items-center gap-4 p-2.5 rounded-2xl glass border-white/10 hover:border-white/20 transition-all font-body">
-              <div className="w-10 h-10 rounded-xl bg-text-primary flex items-center justify-center text-[10px] font-black text-bg-primary">
+            <button className="flex items-center gap-4 p-2 pr-5 rounded-2xl glass border-white/10 hover:border-white/20 hover:bg-white/[0.05] transition-all font-body group">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-text-primary via-white/80 to-text-muted flex items-center justify-center text-[10px] font-black text-bg-primary shadow-glow-premium group-hover:rotate-12 transition-transform">
                 AI
               </div>
-              <div className="flex flex-col items-start leading-tight pr-3">
-                <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em] leading-none mb-1">Account</span>
-                <span className="text-xs font-bold text-text-primary">Premium</span>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[9px] font-black text-text-muted uppercase tracking-[0.2em] leading-none mb-1 opacity-50">Identity</span>
+                <span className="text-xs font-bold text-text-primary tracking-tight">Premium Operative</span>
               </div>
             </button>
           </div>

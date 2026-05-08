@@ -10,9 +10,9 @@ from __future__ import annotations
 import httpx
 from io import BytesIO
 from typing import List, Optional, Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, BackgroundTasks
 from PIL import Image
 
 from app.database import get_pool
@@ -73,6 +73,7 @@ async def upload_analysis(
     wcag_level: str = Form("AA"),
     simulation_preset: str = Form("combined"),
     user_id: UUID = Depends(get_current_user),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """
     Accept an image file upload, save it to Supabase Storage,
@@ -134,7 +135,7 @@ async def upload_analysis(
                 analysis_id,
             )
 
-            enqueue_analysis(analysis_id, user_id)
+            enqueue_analysis(analysis_id, user_id, background_tasks)
             return AnalysisUploadResponse(analysis_id=analysis_id, status="queued")
 
         except Exception as e:
@@ -147,6 +148,7 @@ async def upload_analysis(
 async def url_analysis(
     body: AnalysisUrlCreate,
     user_id: UUID = Depends(get_current_user),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
     """
     Accept an image URL, download it, save to Supabase Storage,
@@ -223,7 +225,7 @@ async def url_analysis(
                 analysis_id,
             )
 
-            enqueue_analysis(analysis_id, user_id)
+            enqueue_analysis(analysis_id, user_id, background_tasks)
             return AnalysisUploadResponse(analysis_id=analysis_id, status="queued")
 
         except Exception as e:
@@ -375,21 +377,51 @@ async def delete_analysis(
     analysis_id: UUID,
     user_id: UUID = Depends(get_current_user),
 ):
-    """Delete an analysis and associated storage files."""
+    """
+    Delete an analysis record and all its associated storage assets.
+    Fetches paths first to ensure clean removal without expensive searching.
+    """
     pool = get_pool()
+    logger.info(f"Deletion request received for analysis {analysis_id} by user {user_id}")
+    
     async with pool.acquire() as conn:
+        # 1. Fetch analysis details first to get image paths
+        row = await conn.fetchrow(
+            "SELECT original_image_path, degraded_image_path FROM public.analyses WHERE id = $1 AND user_id = $2",
+            analysis_id,
+            user_id,
+        )
+        
+        if not row:
+            logger.warning(f"Delete failed: Analysis {analysis_id} not found or unauthorized for user {user_id}")
+            raise HTTPException(status_code=404, detail="Analysis not found")
+
+        # 2. Perform database deletion
         result = await conn.execute(
             "DELETE FROM public.analyses WHERE id = $1 AND user_id = $2",
             analysis_id,
             user_id,
         )
-    if result == "DELETE 0":
-        raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        logger.info(f"Database record for {analysis_id} deleted successfully: {result}")
 
+    # 3. Clean up storage files (Best effort)
     try:
-        await delete_image_from_storage(user_id, analysis_id)
+        paths_to_delete = []
+        if row["original_image_path"]:
+            paths_to_delete.append(row["original_image_path"])
+        if row["degraded_image_path"]:
+            paths_to_delete.append(row["degraded_image_path"])
+            
+        # Also check for common report paths just in case
+        paths_to_delete.append(f"{user_id}/reports/{analysis_id}.pdf")
+        
+        if paths_to_delete:
+            logger.info(f"Removing associated storage files: {paths_to_delete}")
+            supabase_client.storage.from_(settings.storage_bucket).remove(paths_to_delete)
+            
     except Exception as e:
-        logger.warning(f"Failed to delete storage files for analysis {analysis_id}", exc_info=True)
+        logger.warning(f"Storage cleanup partially failed for {analysis_id}: {str(e)}")
 
 
 @router.get("/{analysis_id}/metrics", response_model=AnalysisMetricsOut)

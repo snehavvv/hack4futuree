@@ -95,16 +95,16 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="flex items-baseline">
           <motion.span 
-            className="text-6xl font-mono font-bold tracking-tighter"
+            className="text-7xl font-mono font-bold tracking-tighter"
             style={{ color: 'var(--text-primary)' }}
           >
             {roundedCount}
           </motion.span>
         </div>
         <motion.span 
-          className="text-[11px] uppercase font-display font-black tracking-[0.4em] text-text-muted mt-4 group-hover:text-text-primary transition-colors opacity-40"
+          className="text-xs uppercase font-display font-black tracking-[0.2em] text-text-muted mt-4 group-hover:text-text-primary transition-colors opacity-60"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
+          animate={{ opacity: 0.6 }}
           transition={{ delay: 0.8 }}
         >
           Intelligence Rank

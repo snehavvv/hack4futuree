@@ -41,8 +41,20 @@ supabase/.env
 Thumbs.db
 desktop.ini
 
-# Logs
+# Logs & Temp
 *.log
+*.txt
+*.json
+status.txt
+status.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Android / Mobile Build
+.gradle/
+gradle/
+app/
+local.properties
+*.apk
+output-metadata.json

@@ -174,7 +174,11 @@ INSERT INTO "auth"."refresh_tokens" ("instance_id", "id", "token", "user_id", "r
 --
 
 INSERT INTO "public"."profiles" ("id", "display_name", "avatar_url", "account_tier", "created_at", "updated_at") VALUES
-	('636abd4f-470b-4829-870c-f32bb980048b', 'sudeepa.santhanam', NULL, 'free', '2026-03-17 21:49:03.189806+00', '2026-03-17 21:49:03.189806+00');
+	('636abd4f-470b-4829-870c-f32bb980048b', 'sudeepa.santhanam', NULL, 'free', '2026-03-17 21:49:03.189806+00', '2026-03-17 21:49:03.189806+00')
+ON CONFLICT (id) DO UPDATE SET
+    display_name = EXCLUDED.display_name,
+    account_tier = EXCLUDED.account_tier,
+    updated_at = EXCLUDED.updated_at;
 
 
 --

@@ -3,11 +3,12 @@ import { motion } from 'framer-motion';
 import { Activity, Clock, FileImage, ArrowRight, Zap } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../lib/apiClient';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { AnalysisListItem } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [analyses, setAnalyses] = useState<AnalysisListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
@@ -24,9 +25,11 @@ export const DashboardPage: React.FC = () => {
         setAnalyses(data);
         
         if (data.length > 0) {
-          const completed = data.filter(a => a.status === 'completed' && a.squint_score !== null);
+          const completed = data.filter((a: AnalysisListItem): a is AnalysisListItem & { squint_score: number } => 
+            a.status === 'completed' && a.squint_score !== null
+          );
           const total = completed.length;
-          const sum = completed.reduce((acc, a) => acc + (a.squint_score || 0), 0);
+          const sum = completed.reduce((acc: number, a: { squint_score: number }) => acc + a.squint_score, 0);
           
           setMetrics({
             total: data.length, // total including pending
@@ -47,13 +50,21 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-12 py-8">
       {/* Header */}
-      <header className="space-y-4">
-        <h1 className="text-4xl md:text-5xl font-display font-black text-text-primary tracking-tighter uppercase">
-          Welcome back, <br /><span className="text-text-muted opacity-50">{user?.displayName}</span>
-        </h1>
-        <p className="text-text-muted font-body font-light max-w-2xl">
-          Here is the current state of your neural readability analyses.
-        </p>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div className="space-y-4 text-left">
+          <h1 className="text-4xl md:text-5xl font-display font-black text-text-primary tracking-tighter uppercase">
+            Welcome back, <br /><span className="text-text-muted opacity-50">{user?.displayName}</span>
+          </h1>
+          <p className="text-text-muted font-body font-light max-w-2xl">
+            Here is the current state of your neural readability analyses.
+          </p>
+        </div>
+        <button 
+          onClick={() => navigate('/upload')}
+          className="btn btn-primary px-10 py-5 text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl flex items-center gap-4 shadow-panel-premium hover:scale-[1.02] transition-all"
+        >
+          <Zap size={18} className="fill-current" /> System Analysis
+        </button>
       </header>
 
       {/* Metrics Array */}
@@ -109,7 +120,7 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-sm text-text-muted font-light">Initialize your first neural analysis.</p>
               </div>
               <Link to="/upload" className="btn btn-primary inline-flex mt-4">
-                Start Analysis
+                System Analysis
               </Link>
             </div>
           ) : (

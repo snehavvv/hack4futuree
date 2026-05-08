@@ -20,7 +20,7 @@ import { OnboardingTour } from '../components/OnboardingTour';
 import { useToast } from '../components/Toast';
 import { exportAsJSON, copyToClipboard } from '../lib/exportUtils';
 import apiClient from '../lib/apiClient';
-import type { AnalysisOut, AnalysisDimension, Suggestion, WCAGIssue } from '../types';
+import type { AnalysisOut, AnalysisDimension, Suggestion, WCAGIssue, SuggestionItem, WCAGIssueItem } from '../types';
 import { PRESET_CONFIGS } from '../types';
 
 type ResultsData = AnalysisOut & {
@@ -55,21 +55,23 @@ export const ResultsPage: React.FC = () => {
           { name: 'Color', score: Math.round(data.metrics?.color_accessibility_score || 0), description: 'Distinguishability under deficiency', icon: 'Palette' },
         ];
 
-        const mappedSuggestions: Suggestion[] = (data.suggestions || []).map((s, i) => ({
+        const mappedSuggestions: Suggestion[] = (data.suggestions || []).map((s: SuggestionItem, i: number) => ({
           id: String(s.rank || i),
           title: `Improve ${s.dimension || 'Readability'}`,
           description: s.suggestion_text || '',
           impact: (s.severity as any) || 'medium',
-          category: s.dimension || 'General'
+          category: s.dimension || 'General',
+          css_fix: (s as any).css_fix
         }));
 
-        const mappedWcagIssues: WCAGIssue[] = (data.wcag_issues || []).map((w, i) => ({
+        const mappedWcagIssues: WCAGIssue[] = (data.wcag_issues || []).map((w: WCAGIssueItem, i: number) => ({
           id: `wcag-${i}`,
           criterion: w.criterion,
           title: `WCAG ${w.criterion} Issue`,
           description: w.description,
-          level: data.wcag_level as any,
-          status: (w.severity as any) || 'fail'
+          level: (data.wcag_level as any) || 'AA',
+          status: w.severity === 'fail' ? 'fail' : w.severity === 'warning' ? 'warning' : 'pass',
+          element: (w as any).element
         }));
 
         setResult({
@@ -131,10 +133,10 @@ export const ResultsPage: React.FC = () => {
             <ChevronLeft size={24} />
           </button>
           <div>
-            <h1 className="text-4xl font-display font-black text-text-primary truncate max-w-[200px] md:max-w-none uppercase tracking-tighter leading-none mb-2">
+            <h1 className="text-4xl md:text-5xl font-display font-black text-text-primary truncate max-w-[200px] md:max-w-none uppercase tracking-tighter leading-none mb-2">
               Neural Report
             </h1>
-            <p className="text-[10px] text-text-muted font-technical font-black tracking-[0.5em] uppercase opacity-30">{result.id}</p>
+            <p className="text-xs text-text-muted font-technical font-black tracking-[0.3em] uppercase opacity-50">{result.id}</p>
           </div>
         </div>
 
@@ -147,7 +149,7 @@ export const ResultsPage: React.FC = () => {
           </button>
           
           <div className="relative group">
-            <button className="flex items-center gap-4 px-8 py-4 glass bg-white/[0.01] border-white/5 text-[9px] font-black uppercase tracking-[0.4em] rounded-2xl text-text-muted hover:text-text-primary transition-all">
+            <button className="flex items-center gap-4 px-8 py-4 glass bg-white/[0.01] border-white/5 text-xs font-black uppercase tracking-[0.2em] rounded-2xl text-text-muted hover:text-text-primary transition-all">
               <Download size={20} /> <span className="hidden sm:inline">Export Report</span>
             </button>
             <div className="absolute top-[calc(100%+12px)] right-0 w-64 hidden group-hover:block glass bg-bg-surface/80 shadow-panel z-50 overflow-hidden border-white/10 rounded-[24px]">
@@ -178,7 +180,7 @@ export const ResultsPage: React.FC = () => {
                     setIsGeneratingPDF(false);
                   }
                 }}
-                className="w-full flex items-center gap-5 px-8 py-6 text-[9px] font-black uppercase tracking-[0.3em] hover:bg-white/5 text-left transition-colors text-text-primary"
+                className="w-full flex items-center gap-5 px-8 py-6 text-xs font-black uppercase tracking-[0.2em] hover:bg-white/5 text-left transition-colors text-text-primary"
               >
                 {isGeneratingPDF ? (
                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -189,7 +191,7 @@ export const ResultsPage: React.FC = () => {
               </button>
               <button 
                 onClick={() => exportAsJSON(result)}
-                className="w-full flex items-center gap-5 px-8 py-6 text-[9px] font-black uppercase tracking-[0.3em] hover:bg-white/5 text-left transition-colors text-text-primary border-t border-white/5"
+                className="w-full flex items-center gap-5 px-8 py-6 text-xs font-black uppercase tracking-[0.2em] hover:bg-white/5 text-left transition-colors text-text-primary border-t border-white/5"
               >
                 <FileJson size={20} /> JSON Data Core
               </button>
@@ -198,7 +200,7 @@ export const ResultsPage: React.FC = () => {
 
           <button 
             onClick={() => navigate('/upload')}
-            className="btn btn-primary px-10 py-5 text-[9px] font-black uppercase tracking-[0.4em] rounded-2xl flex items-center gap-4 shadow-panel"
+            className="btn btn-primary px-10 py-5 text-xs font-black uppercase tracking-[0.2em] rounded-2xl flex items-center gap-4 shadow-panel"
           >
             <Plus size={20} /> <span className="hidden sm:inline">New Analysis</span>
           </button>
@@ -231,7 +233,7 @@ export const ResultsPage: React.FC = () => {
             >
               <div className="flex items-center gap-3 mb-8 text-text-muted">
                 <Settings2 size={20} className="opacity-50" />
-                <h3 className="text-[11px] font-technical font-black uppercase tracking-[0.5em] opacity-40">Simulation Parameters</h3>
+                <h3 className="text-xs font-technical font-black uppercase tracking-[0.3em] opacity-60">Simulation Parameters</h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(PRESET_CONFIGS).map(([key, config]) => (
@@ -244,8 +246,8 @@ export const ResultsPage: React.FC = () => {
                         : 'bg-white/[0.02] text-text-secondary border-white/5 opacity-40'}
                     `}
                   >
-                    <p className="text-xs font-black uppercase tracking-tight leading-tight">{config.label}</p>
-                    <p className={`text-[9px] mt-1.5 leading-tight font-medium ${result.simulation_preset === key ? 'opacity-70' : 'opacity-40'}`}>
+                    <p className="text-xs font-bold uppercase tracking-tight leading-tight">{config.label}</p>
+                    <p className={`text-[10px] mt-1.5 leading-tight font-medium ${result.simulation_preset === key ? 'opacity-90' : 'opacity-60'}`}>
                       {config.description}
                     </p>
                   </div>
@@ -261,7 +263,7 @@ export const ResultsPage: React.FC = () => {
             >
               <div className="flex items-center gap-3 mb-8 text-text-muted">
                 <Layers size={20} className="opacity-50" />
-                <h3 className="text-[11px] font-technical font-black uppercase tracking-[0.5em] opacity-40">Intelligence Vectors</h3>
+                <h3 className="text-xs font-technical font-black uppercase tracking-[0.3em] opacity-60">Intelligence Vectors</h3>
               </div>
               <DimensionBars dimensions={result.dimensions} />
             </motion.div>
@@ -277,7 +279,7 @@ export const ResultsPage: React.FC = () => {
             <div className="absolute inset-0 bg-grain pointer-events-none" />
             <ScoreGauge score={result.squint_score || 0} size={300} />
             <div className="mt-16 pt-16 border-t border-white/5 w-full relative z-10">
-              <p className="text-[10px] text-text-muted mb-6 font-technical font-black uppercase tracking-[0.5em] opacity-30">Neural Readability Rank</p>
+              <p className="text-xs text-text-muted mb-6 font-technical font-black uppercase tracking-[0.3em] opacity-50">Neural Readability Rank</p>
               <div className="flex items-center justify-center gap-6">
                 <div className="h-2 w-48 bg-white/5 rounded-full overflow-hidden">
                   <motion.div 
@@ -287,7 +289,7 @@ export const ResultsPage: React.FC = () => {
                     transition={{ duration: 1.5, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   />
                 </div>
-                <span className="font-technical text-[10px] font-black text-text-primary uppercase tracking-[0.2em]">PR {result.squint_score}</span>
+                <span className="font-technical text-xs font-black text-text-primary uppercase tracking-[0.1em]">PR {result.squint_score}</span>
               </div>
             </div>
           </motion.div>

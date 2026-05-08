@@ -69,6 +69,7 @@ export interface WCAGIssueItem {
 
 export interface AnalysisOut {
   id: string;
+  jobId?: string;
   user_id: string;
   input_type: string | null;
   input_url: string | null;
@@ -86,6 +87,7 @@ export interface AnalysisOut {
   metrics: MetricsOut | null;
   suggestions: SuggestionItem[] | null;
   wcag_issues: WCAGIssueItem[] | null;
+  dimensions?: AnalysisDimension[];
 }
 
 export interface AnalysisListItem {
@@ -124,6 +126,7 @@ export interface WCAGIssue {
   description: string;
   level: 'A' | 'AA' | 'AAA';
   status: 'pass' | 'fail' | 'warning';
+  element?: string;
 }
 
 // ---- Color Deficiency ----

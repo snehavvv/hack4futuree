@@ -36,7 +36,7 @@ export const RevealText: React.FC<RevealTextProps> = ({ text, className = '' }) 
         return (
           <motion.span
             key={i}
-            className="mr-[0.25em] mb-[0.1em]"
+            className="mr-[0.25em] mb-[0.1em] inline-block"
             style={{
               opacity,
               filter,

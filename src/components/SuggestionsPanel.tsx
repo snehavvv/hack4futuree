@@ -44,8 +44,8 @@ export const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({ suggestions 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-6 px-2">
-        <Zap size={18} className="text-text-primary opacity-50 shadow-glow-premium" />
-        <h3 className="text-[11px] font-technical font-black uppercase tracking-[0.5em] text-text-muted opacity-40">Intelligence Fixes</h3>
+        <Zap size={18} className="text-text-primary opacity-60 shadow-glow-premium" />
+        <h3 className="text-xs font-technical font-black uppercase tracking-[0.3em] text-text-muted opacity-60">Intelligence Fixes</h3>
       </div>
 
       <motion.div 
@@ -66,10 +66,10 @@ export const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({ suggestions 
               className="w-full flex items-center justify-between p-6 text-left group"
             >
               <div className="flex items-center gap-5">
-                <span className={`text-[9px] font-technical font-black px-3 py-1 rounded-full border border-white/10 bg-white/5 uppercase tracking-[0.3em] ${s.impact === 'high' ? 'text-text-primary' : 'text-text-muted opacity-40'}`}>
+                <span className={`text-xs font-technical font-black px-3 py-1 rounded-full border border-white/10 bg-white/5 uppercase tracking-[0.2em] ${s.impact === 'high' ? 'text-text-primary' : 'text-text-muted opacity-60'}`}>
                   {s.impact}
                 </span>
-                <span className="font-display font-black text-text-primary text-sm group-hover:opacity-70 transition-opacity uppercase tracking-tighter">{s.title}</span>
+                <span className="font-display font-black text-text-primary text-base group-hover:opacity-70 transition-opacity uppercase tracking-tighter">{s.title}</span>
               </div>
               <motion.div
                 animate={{ rotate: expandedId === s.id ? 180 : 0 }}
@@ -88,25 +88,25 @@ export const SuggestionsPanel: React.FC<SuggestionsPanelProps> = ({ suggestions 
                   transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <div className="p-6 pt-0 space-y-6 border-t border-white/5 mt-2">
-                    <p className="text-sm text-text-secondary font-body font-light leading-relaxed opacity-80">
+                    <p className="text-sm text-text-secondary font-body font-medium leading-relaxed opacity-90">
                       {s.description}
                     </p>
                     
-                    {s.cssFix && (
+                    {s.css_fix && (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-technical font-black uppercase tracking-[0.4em] text-text-muted flex items-center gap-2 opacity-40">
-                            <Code size={14} className="opacity-50" /> Suggested fix payload
+                          <span className="text-xs font-technical font-black uppercase tracking-[0.2em] text-text-muted flex items-center gap-2 opacity-60">
+                            <Code size={14} className="opacity-60" /> Suggested fix payload
                           </span>
                           <button 
-                            onClick={() => handleCopy(s.cssFix!)}
-                            className="text-[9px] font-technical font-black uppercase tracking-[0.4em] text-text-primary hover:opacity-100 opacity-40 transition-opacity flex items-center gap-2"
+                            onClick={() => handleCopy(s.css_fix!)}
+                            className="text-xs font-technical font-black uppercase tracking-[0.2em] text-text-primary hover:opacity-100 opacity-60 transition-opacity flex items-center gap-2"
                           >
                             Copy Logic
                           </button>
                         </div>
-                        <pre className="glass bg-white/[0.02] p-6 rounded-2xl border border-white/5 text-[11px] font-mono overflow-x-auto text-text-primary/70 whitespace-pre-wrap leading-relaxed shadow-inner">
-                          {s.cssFix}
+                        <pre className="glass bg-white/[0.02] p-6 rounded-2xl border border-white/5 text-sm font-mono overflow-x-auto text-text-primary/70 whitespace-pre-wrap leading-relaxed shadow-inner">
+                          {s.css_fix}
                         </pre>
                       </div>
                     )}

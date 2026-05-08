@@ -11,11 +11,9 @@ services:
         condition: service_started
     ports:
       - "3000:3000"
+    env_file: .env
     environment:
       SUPABASE_URL: http://kong:8000
-      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
-      SUPABASE_ANON_KEY: ${ANON_KEY}
-      SUPABASE_SERVICE_KEY: ${SERVICE_ROLE_KEY}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
 
@@ -29,10 +27,13 @@ services:
     ports:
       - "8000:8000"
       - "8443:8443"
+    env_file: .env
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
       KONG_PROXY_ACCESS_LOG: /dev/stdout
+    volumes:
+      - ./volumes/api/kong.yml:/usr/local/kong/kong.yml
 
   auth:
     container_name: supabase-auth
@@ -40,12 +41,18 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+    env_file: .env
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
       GOTRUE_DB_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      GOTRUE_SITE_URL: http://localhost:3000
+      GOTRUE_SITE_URL: ${SITE_URL}
       GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: ${ENABLE_EMAIL_SIGNUP}
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM}
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL}
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY}
+      GOTRUE_DB_MAX_POOL_SIZE: ${POOLER_DEFAULT_POOL_SIZE}
 
   rest:
     container_name: supabase-rest
@@ -53,6 +60,7 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+    env_file: .env
     environment:
       PGRST_DB_URI: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
 
@@ -62,6 +70,7 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+    env_file: .env
 
   storage:
     container_name: supabase-storage
@@ -69,6 +78,20 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+      - rest
+    env_file: .env
+    environment:
+      ANON_KEY: ${ANON_KEY}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY}
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      POSTGREST_URL: http://rest:3000
+      PGRST_SCHEMA: storage
+      HTTP_PORT: 5000
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+    volumes:
+      - ./volumes/storage:/var/lib/storage
 
   imgproxy:
     container_name: supabase-imgproxy
@@ -81,18 +104,18 @@ services:
     restart: unless-stopped
     depends_on:
       - db
+    env_file: .env
 
   functions:
     container_name: supabase-edge-functions
     image: supabase/edge-runtime:v1.71.2
     restart: unless-stopped
+    env_file: .env
 
   db:
     container_name: supabase-db
     image: supabase/postgres:15.8.1.085
     restart: unless-stopped
-    ports:
-      - "5432:5432" # 🔥 THIS FIXES YOUR ISSUE
     volumes:
       - ./volumes/db/data:/var/lib/postgresql/data
     environment:
@@ -103,11 +126,27 @@ services:
     container_name: supabase-vector
     image: timberio/vector:0.53.0-alpine
     restart: unless-stopped
+    env_file: .env
 
   supavisor:
     container_name: supabase-pooler
     image: supabase/supavisor:2.7.4
     restart: unless-stopped
+    depends_on:
+      - db
+    env_file: .env
+    ports:
+      - "6543:6543"
+      - "5432:5432"
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      PORT: 6543
+      POOLER_TENANT_ID: ${POOLER_TENANT_ID}
+      POOLER_DEFAULT_POOL_SIZE: ${POOLER_DEFAULT_POOL_SIZE}
+      POOLER_MAX_CLIENT_CONN: ${POOLER_MAX_CLIENT_CONN}
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./volumes/pooler/pooler.exs:/etc/pooler/pooler.exs
 
 volumes:
   db-config:

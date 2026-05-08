@@ -1,5 +1,5 @@
 import type {
-  AnalysisResult,
+  AnalysisOut,
   AnalysisDimension,
   Suggestion,
   WCAGIssue,
@@ -26,17 +26,37 @@ export async function generateSimulatedImage(
   const config = PRESETS[preset];
   
   return new Promise((resolve) => {
+    if (!imageUrl) {
+      resolve('');
+      return;
+    }
+
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      // Resize to prevent memory issues and localStorage quota errors
+      const MAX_DIM = 1000;
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) {
+          height = (height / width) * MAX_DIM;
+          width = MAX_DIM;
+        } else {
+          width = (width / height) * MAX_DIM;
+          height = MAX_DIM;
+        }
+      }
+
       const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext('2d');
       if (!ctx) { resolve(imageUrl); return; }
 
       ctx.filter = `blur(${config.blur}px) contrast(${config.contrast}) brightness(${config.brightness}) saturate(${config.saturate})`;
-      ctx.drawImage(img, 0, 0);
+      ctx.drawImage(img, 0, 0, width, height);
 
       if (preset === 'bright_sunlight') {
         const grad = ctx.createRadialGradient(canvas.width * 0.7, canvas.height * 0.3, 0, canvas.width * 0.7, canvas.height * 0.3, canvas.width * 0.5);
@@ -46,14 +66,22 @@ export async function generateSimulatedImage(
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      if (preset === 'cataracts') {
+      if (preset === 'cataract') {
         ctx.fillStyle = 'rgba(180, 160, 100, 0.15)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
-      resolve(canvas.toDataURL('image/jpeg', 0.85));
+      try {
+        resolve(canvas.toDataURL('image/jpeg', 0.7)); // Reduced quality to save space
+      } catch (e) {
+        console.error('Canvas toDataURL failed:', e);
+        resolve(imageUrl);
+      }
     };
-    img.onerror = () => resolve(imageUrl);
+    img.onerror = (e) => {
+      console.error('Image load failed for simulation:', e);
+      resolve(imageUrl);
+    };
     img.src = imageUrl;
   });
 }
@@ -84,12 +112,18 @@ function generateWCAGIssues(score: number): WCAGIssue[] {
   ];
 }
 
-export async function runAnalysis(imageUrl: string, preset: SimulationPreset = 'default', fileName?: string, onProgress?: (s: string, p: number) => void): Promise<AnalysisResult> {
+export async function runAnalysis(imageUrl: string, preset: SimulationPreset = 'combined', fileName?: string, onProgress?: (s: string, p: number) => void): Promise<AnalysisOut> {
   const id = generateId();
   const jobId = `job-${id}`;
   onProgress?.('Uploading...', 10);
   await delay(100);
+  
+  onProgress?.('Neural Processing...', 40);
   const simulatedImageUrl = await generateSimulatedImage(imageUrl, preset);
+  
+  onProgress?.('Calculating Readability...', 70);
+  await delay(200);
+  
   const squintScore = randomBetween(40, 95);
   return { id, jobId, imageUrl, simulatedImageUrl, squintScore, dimensions: generateDimensions(squintScore), suggestions: generateSuggestions(squintScore), wcagIssues: generateWCAGIssues(squintScore), status: 'complete', preset, createdAt: new Date().toISOString(), fileName };
 }
@@ -98,28 +132,38 @@ function delay(ms: number): Promise<void> { return new Promise(resolve => setTim
 const STORAGE_KEY = 'squintscale_analyses';
 const MAX_STORAGE_ITEMS = 5;
 
-export function saveAnalysis(result: AnalysisResult): void { 
+export function saveAnalysis(result: AnalysisOut): void { 
   try {
     const s = getStoredAnalyses(); 
     s.unshift(result); 
-    const limited = s.slice(0, MAX_STORAGE_ITEMS);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(limited)); 
-  } catch (e) {
-    if (e instanceof Error && e.name === 'QuotaExceededError') {
-      console.warn('Analysis storage quota exceeded, purging old records...');
-      const s = getStoredAnalyses();
-      // Purge half and try again
-      const purged = s.slice(0, Math.floor(MAX_STORAGE_ITEMS / 2));
+    let limited = s.slice(0, MAX_STORAGE_ITEMS);
+    
+    // Attempt to save, reducing list size if QuotaExceededError occurs
+    while (limited.length > 0) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(purged));
-      } catch (finalError) {
-        console.error('Failed to save analysis even after purge', finalError);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(limited));
+        break;
+      } catch (e) {
+        if (e instanceof Error && e.name === 'QuotaExceededError') {
+          if (limited.length > 1) {
+            limited.pop(); // Remove oldest analysis
+          } else {
+            // Even one is too big? Strip images and just save metadata
+            const stripped = { ...limited[0], imageUrl: '', simulatedImageUrl: '' };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([stripped]));
+            break;
+          }
+        } else {
+          throw e;
+        }
       }
     }
+  } catch (e) {
+    console.error('Failed to save analysis to storage', e);
   }
 }
 
-export function getStoredAnalyses(): AnalysisResult[] { 
+export function getStoredAnalyses(): AnalysisOut[] { 
   try { 
     const r = localStorage.getItem(STORAGE_KEY); 
     return r ? JSON.parse(r) : []; 
@@ -129,7 +173,7 @@ export function getStoredAnalyses(): AnalysisResult[] {
   } 
 }
 
-export function getAnalysisById(id: string): AnalysisResult | undefined { 
+export function getAnalysisById(id: string): AnalysisOut | undefined { 
   return getStoredAnalyses().find(a => a.id === id || a.jobId === id); 
 }
 

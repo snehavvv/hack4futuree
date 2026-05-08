@@ -51,11 +51,11 @@ export const DimensionBars: React.FC<DimensionBarsProps> = ({ dimensions }) => {
             className="space-y-3"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 text-text-primary opacity-80">
-                <Icon size={16} className="text-text-muted" />
-                <span className="font-technical font-black text-[10px] uppercase tracking-[0.3em]">{dim.name}</span>
+              <div className="flex items-center gap-3 text-text-primary">
+                <Icon size={18} className="text-text-muted" />
+                <span className="font-technical font-black text-xs uppercase tracking-[0.2em]">{dim.name}</span>
               </div>
-              <span className={`font-technical font-black text-[10px] ${scoreColor}`}>{dim.score}%</span>
+              <span className={`font-technical font-black text-xs ${scoreColor}`}>{dim.score}%</span>
             </div>
             
             <div className="h-2 bg-white/5 rounded-full overflow-hidden relative">
@@ -69,7 +69,7 @@ export const DimensionBars: React.FC<DimensionBarsProps> = ({ dimensions }) => {
                 }}
               />
             </div>
-            <p className="text-[11px] text-text-muted font-body font-light leading-relaxed opacity-60 group-hover:opacity-100 transition-opacity">{dim.description}</p>
+            <p className="text-xs text-text-muted font-body font-medium leading-relaxed opacity-80 transition-opacity">{dim.description}</p>
           </motion.div>
         );
       })}

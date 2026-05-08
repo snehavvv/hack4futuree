@@ -92,8 +92,8 @@ const ConstellationCanvas: React.FC = () => {
       const isLight = document.documentElement.getAttribute('data-theme') === 'light';
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const starColor = isLight ? 'rgba(43, 43, 43, ' : 'rgba(245, 245, 245, ';
-      const lineColor = isLight ? 'rgba(179, 179, 179, ' : 'rgba(82, 82, 82, ';
+      const starColor = isLight ? 'rgba(0, 0, 0, ' : 'rgba(245, 245, 245, ';
+      const lineColor = isLight ? 'rgba(0, 0, 0, ' : 'rgba(82, 82, 82, ';
 
       // Particles
       particles.current.forEach((p, i) => {
@@ -110,7 +110,8 @@ const ConstellationCanvas: React.FC = () => {
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `${starColor}${isLight ? currentOpacity * 0.2 : currentOpacity * 0.6})`;
+        // Dramatically increase opacity for light mode
+        ctx.fillStyle = `${starColor}${isLight ? 0.95 : currentOpacity * 0.6})`;
         ctx.fill();
 
         // Lines
@@ -124,9 +125,10 @@ const ConstellationCanvas: React.FC = () => {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            const lineOpacity = (1 - dist / 100) * 0.08;
+            // Stronger lines for light mode
+            const lineOpacity = (1 - dist / 100) * (isLight ? 0.5 : 0.08);
             ctx.strokeStyle = `${lineColor}${lineOpacity})`;
-            ctx.lineWidth = 0.4;
+            ctx.lineWidth = isLight ? 0.6 : 0.4;
             ctx.stroke();
           }
         }

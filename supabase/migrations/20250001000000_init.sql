@@ -13,7 +13,8 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, display_name)
-  VALUES (new.id, split_part(new.email, '@', 1));
+  VALUES (new.id, split_part(new.email, '@', 1))
+  ON CONFLICT (id) DO NOTHING;
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -34,6 +35,8 @@ CREATE TABLE public.analyses (
     error_reason TEXT,
     squint_score FLOAT,
     squint_band TEXT CHECK (squint_band IN ('excellent', 'good', 'moderate', 'poor', 'critical')),
+    wcag_level TEXT DEFAULT 'AA',
+    simulation_preset TEXT DEFAULT 'combined',
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -47,6 +50,8 @@ CREATE TABLE public.analysis_metrics (
     color_accessibility_score FLOAT,
     ocr_retention_rate FLOAT,
     confidence_delta FLOAT,
+    ocr_text_before TEXT,
+    ocr_text_after TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -54,9 +59,12 @@ CREATE TABLE public.analysis_metrics (
 CREATE TABLE public.suggestions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     analysis_id UUID REFERENCES public.analyses(id) ON DELETE CASCADE,
-    severity TEXT CHECK (severity IN ('critical', 'high', 'medium')),
+    severity TEXT CHECK (severity IN ('critical', 'high', 'medium', 'low')),
     suggestion TEXT NOT NULL,
+    suggestion_text TEXT,
     expected_lift FLOAT,
+    dimension TEXT,
+    rank INT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 

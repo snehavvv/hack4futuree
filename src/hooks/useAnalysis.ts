@@ -21,57 +21,6 @@ export function useAnalysis() {
   const { addToast } = useToast();
   const pollingRef = useRef<number | null>(null);
 
-  const startAnalysis = useCallback(async (
-    imageSource: File | string, 
-    preset: string = 'combined',
-    wcagLevel: string = 'AA'
-  ) => {
-    // Prevent overlapping analyses
-    if (pollingRef.current) {
-      window.clearInterval(pollingRef.current);
-    }
-
-    setStatus('processing');
-    setProgress(10);
-    setProgressLabel('Uploading to secure cloud...');
-
-    try {
-      let analysisId: string;
-
-      if (imageSource instanceof File) {
-        // Upload File
-        const formData = new FormData();
-        formData.append('file', imageSource);
-        formData.append('wcag_level', wcagLevel);
-        formData.append('simulation_preset', preset);
-
-        const { data } = await apiClient.post('/analyses/upload', formData);
-        analysisId = data.analysis_id;
-      } else {
-        // Send URL
-        const { data } = await apiClient.post('/analyses/url', {
-          url: imageSource,
-          wcag_level: wcagLevel,
-          simulation_preset: preset,
-        });
-        analysisId = data.analysis_id;
-      }
-
-      setResult({ jobId: analysisId });
-      setProgress(40);
-      setProgressLabel('Initializing neural analysis...');
-      
-      // Start polling
-      startPolling(analysisId);
-
-    } catch (error: any) {
-      console.error('Analysis failed to start:', error);
-      setStatus('failed');
-      const msg = error.response?.data?.detail || 'Analysis pipeline failed to start. Please try again.';
-      addToast(msg, 'error');
-    }
-  }, [addToast]);
-
   const startPolling = useCallback((analysisId: string) => {
     // Clear any existing poll
     if (pollingRef.current) {
@@ -113,6 +62,74 @@ export function useAnalysis() {
     }, 2000);
   }, [navigate, addToast]);
 
+  const startAnalysis = useCallback(async (
+    imageSource: File | string, 
+    preset: string = 'combined',
+    wcagLevel: string = 'AA'
+  ) => {
+    // Prevent overlapping analyses
+    if (pollingRef.current) {
+      window.clearInterval(pollingRef.current);
+    }
+
+    setStatus('processing');
+    setProgress(10);
+    setProgressLabel('Uploading to secure cloud...');
+
+    try {
+      let analysisId: string;
+      console.log('[SquintScale] Analysis Pipeline: Starting...', { preset, wcagLevel });
+
+      if (imageSource instanceof File) {
+        console.log('[SquintScale] Analysis Pipeline: Uploading file...', imageSource.name);
+        const formData = new FormData();
+        formData.append('file', imageSource);
+        formData.append('wcag_level', wcagLevel);
+        formData.append('simulation_preset', preset);
+
+        const { data } = await apiClient.post('/analyses/upload', formData);
+        analysisId = data.analysis_id;
+      } else {
+        console.log('[SquintScale] Analysis Pipeline: Sending URL...', imageSource);
+        const { data } = await apiClient.post('/analyses/url', {
+          url: imageSource,
+          wcag_level: wcagLevel,
+          simulation_preset: preset,
+        });
+        analysisId = data.analysis_id;
+      }
+
+      console.log('[SquintScale] Analysis Pipeline: Job created, ID:', analysisId);
+      setResult({ jobId: analysisId });
+      setProgress(40);
+      setProgressLabel('Initializing neural analysis...');
+      
+      // Start polling
+      startPolling(analysisId);
+
+    } catch (error: any) {
+      console.error('[SquintScale] Analysis Pipeline CRITICAL FAILURE:', error);
+      setStatus('failed');
+      
+      const errorData = error.response?.data?.detail;
+      let msg = 'Analysis pipeline failed to start. Please try again.';
+      
+      if (Array.isArray(errorData)) {
+        msg = errorData.map((d: any) => d.msg).join(', ');
+      } else if (typeof errorData === 'string') {
+        msg = errorData;
+      } else if (error?.message) {
+        msg = error.message;
+      }
+      
+      addToast(msg, 'error');
+      
+      // Reset status after a delay so user can try again
+      setTimeout(() => setStatus('idle'), 3000);
+      throw error;
+    }
+  }, [addToast, startPolling]);
+
   const reset = useCallback(() => {
     setStatus('idle');
     setProgress(0);
@@ -131,3 +148,4 @@ export function useAnalysis() {
     reset
   };
 }
+

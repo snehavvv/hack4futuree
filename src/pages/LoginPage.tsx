@@ -15,7 +15,7 @@ export const LoginPage: React.FC = () => {
   const { signIn } = useAuth();
   const { addToast } = useToast();
 
-  const from = (location.state as any)?.from?.pathname || '/dashboard';
+  const from = (location.state as any)?.from?.pathname || '/upload';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,9 +49,9 @@ export const LoginPage: React.FC = () => {
       <div className="hidden md:flex md:w-1/2 relative bg-bg-secondary p-12 flex-col justify-between overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-cyan/20 to-transparent pointer-events-none" />
         <div className="z-10 group cursor-pointer" onClick={() => navigate('/')}>
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-text-primary shadow-glow-premium flex items-center justify-center font-display font-black text-bg-primary">S</div>
-            <span className="text-2xl font-display font-black tracking-tighter uppercase">SQUINT<span className="opacity-20">SCALE</span></span>
+          <div className="flex items-center gap-5 mb-2">
+            <img src="/logo.png" alt="SquintScale Logo" className="w-12 h-12 object-contain shadow-glow-premium rounded-2xl" />
+            <span className="text-3xl font-display font-black tracking-tighter uppercase">SQUINT<span className="opacity-20">SCALE</span></span>
           </div>
         </div>
         <div className="z-10 max-w-2xl">

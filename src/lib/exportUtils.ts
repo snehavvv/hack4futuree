@@ -1,9 +1,9 @@
 import { jsPDF } from 'jspdf';
-import type { AnalysisResult } from '../types';
+import type { AnalysisOut } from '../types';
 import { getScoreBand, getScoreBandLabel } from '../types';
 
 // Export analysis as JSON
-export function exportAsJSON(result: AnalysisResult): void {
+export function exportAsJSON(result: AnalysisOut): void {
   const data = JSON.stringify(result, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -17,7 +17,7 @@ export function exportAsJSON(result: AnalysisResult): void {
 }
 
 // Export analysis as PDF
-export async function exportAsPDF(result: AnalysisResult): Promise<void> {
+export async function exportAsPDF(result: AnalysisOut): Promise<void> {
   const doc = new jsPDF('p', 'mm', 'a4');
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
@@ -39,12 +39,12 @@ export async function exportAsPDF(result: AnalysisResult): Promise<void> {
 
   doc.setTextColor(100, 100, 140);
   doc.setFontSize(8);
-  doc.text(`Generated: ${new Date(result.createdAt).toLocaleDateString()} | Job: ${result.jobId}`, margin, 35);
+  doc.text(`Generated: ${new Date(result.created_at).toLocaleDateString()} | Job: ${result.jobId || 'N/A'}`, margin, 35);
 
   y = 55;
 
   // Score Card
-  const band = getScoreBand(result.squintScore);
+  const band = getScoreBand(result.squint_score || 0);
   const bandLabel = getScoreBandLabel(band);
 
   doc.setFillColor(18, 18, 42);
@@ -56,14 +56,14 @@ export async function exportAsPDF(result: AnalysisResult): Promise<void> {
 
   doc.setFontSize(36);
   doc.setTextColor(...getScorePDFColor(band));
-  doc.text(`${result.squintScore}`, margin + 10, y + 30);
+  doc.text(`${result.squint_score || 0}`, margin + 10, y + 30);
 
   doc.setFontSize(12);
   doc.text(`/ 100  —  ${bandLabel}`, margin + 35, y + 30);
 
   doc.setFontSize(9);
   doc.setTextColor(160, 160, 192);
-  doc.text(`Preset: ${result.preset}`, margin + contentWidth - 40, y + 12);
+  doc.text(`Preset: ${result.simulation_preset}`, margin + contentWidth - 40, y + 12);
 
   y += 42;
 
@@ -73,7 +73,7 @@ export async function exportAsPDF(result: AnalysisResult): Promise<void> {
   doc.text('Dimension Breakdown', margin, y);
   y += 8;
 
-  for (const dim of result.dimensions) {
+  for (const dim of (result.dimensions || [])) {
     doc.setTextColor(240, 240, 255);
     doc.setFontSize(9);
     doc.text(dim.name, margin + 5, y);
@@ -102,7 +102,7 @@ export async function exportAsPDF(result: AnalysisResult): Promise<void> {
   doc.text('Top Suggestions', margin, y);
   y += 8;
 
-  const topSuggestions = result.suggestions.slice(0, 5);
+  const topSuggestions = (result.suggestions || []).slice(0, 5);
   for (let i = 0; i < topSuggestions.length; i++) {
     const s = topSuggestions[i];
     if (y > 260) { doc.addPage(); y = margin; }
@@ -110,18 +110,19 @@ export async function exportAsPDF(result: AnalysisResult): Promise<void> {
     doc.setFillColor(18, 18, 42);
     doc.roundedRect(margin, y, contentWidth, 12, 2, 2, 'F');
 
-    const impactColor = s.impact === 'high' ? [239, 68, 68] : s.impact === 'medium' ? [245, 158, 11] : [0, 240, 255];
+    const impact = s.severity || 'medium';
+    const impactColor = impact === 'high' || impact === 'critical' ? [239, 68, 68] : impact === 'medium' ? [245, 158, 11] : [0, 240, 255];
     doc.setTextColor(impactColor[0], impactColor[1], impactColor[2]);
     doc.setFontSize(7);
-    doc.text(s.impact.toUpperCase(), margin + 3, y + 5);
+    doc.text(impact.toUpperCase(), margin + 3, y + 5);
 
     doc.setTextColor(240, 240, 255);
     doc.setFontSize(9);
-    doc.text(s.title, margin + 18, y + 5);
+    doc.text(s.dimension || 'Readability', margin + 18, y + 5);
 
     doc.setTextColor(160, 160, 192);
     doc.setFontSize(7);
-    const descLines = doc.splitTextToSize(s.description, contentWidth - 10);
+    const descLines = doc.splitTextToSize(s.suggestion_text || '', contentWidth - 10);
     doc.text(descLines[0] || '', margin + 3, y + 10);
 
     y += 15;
@@ -137,33 +138,37 @@ export async function exportAsPDF(result: AnalysisResult): Promise<void> {
   doc.text('WCAG 2.2 Compliance Summary', margin, y);
   y += 8;
 
-  const passed = result.wcagIssues.filter(i => i.status === 'pass').length;
-  const failed = result.wcagIssues.filter(i => i.status === 'fail').length;
-  const warnings = result.wcagIssues.filter(i => i.status === 'warning').length;
+  const issues = result.wcag_issues || [];
+  const getStatus = (severity: string) => severity === 'fail' ? 'fail' : severity === 'warning' ? 'warning' : 'pass';
+  
+  const passedCount = issues.filter(i => getStatus(i.severity) === 'pass').length;
+  const failedCount = issues.filter(i => getStatus(i.severity) === 'fail').length;
+  const warningCount = issues.filter(i => getStatus(i.severity) === 'warning').length;
 
   doc.setFontSize(9);
   doc.setTextColor(34, 197, 94);
-  doc.text(`✓ ${passed} Passed`, margin + 5, y);
+  doc.text(`✓ ${passedCount} Passed`, margin + 5, y);
   doc.setTextColor(239, 68, 68);
-  doc.text(`✗ ${failed} Failed`, margin + 40, y);
+  doc.text(`✗ ${failedCount} Failed`, margin + 40, y);
   doc.setTextColor(245, 158, 11);
-  doc.text(`⚠ ${warnings} Warnings`, margin + 75, y);
+  doc.text(`⚠ ${warningCount} Warnings`, margin + 75, y);
 
   y += 8;
 
-  for (const issue of result.wcagIssues) {
+  for (const issue of issues) {
     if (y > 275) { doc.addPage(); y = margin; }
-    const statusColor = issue.status === 'pass' ? [34, 197, 94] : issue.status === 'fail' ? [239, 68, 68] : [245, 158, 11];
+    const status = getStatus(issue.severity);
+    const statusColor = status === 'pass' ? [34, 197, 94] : status === 'fail' ? [239, 68, 68] : [245, 158, 11];
     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
     doc.setFontSize(7);
-    doc.text(issue.status.toUpperCase(), margin + 5, y);
+    doc.text(status.toUpperCase(), margin + 5, y);
 
     doc.setTextColor(160, 160, 192);
     doc.text(`${issue.criterion}`, margin + 20, y);
 
     doc.setTextColor(240, 240, 255);
     doc.setFontSize(8);
-    doc.text(issue.title, margin + 35, y);
+    doc.text(issue.description.slice(0, 60), margin + 35, y);
 
     y += 6;
   }

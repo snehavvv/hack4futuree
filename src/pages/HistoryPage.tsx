@@ -8,7 +8,8 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  FileImage
+  FileImage,
+  Zap
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { copyToClipboard } from '../lib/exportUtils';
@@ -22,6 +23,7 @@ export const HistoryPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [filterBand, setFilterBand] = useState<ScoreBand | 'all'>('all');
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { addToast } = useToast();
 
@@ -47,12 +49,27 @@ export const HistoryPage: React.FC = () => {
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
+    
+    // Simple confirmation for data safety
+    if (!window.confirm('Are you sure you want to purge this analysis from the archives?')) {
+      return;
+    }
+
+    setDeletingIds(prev => new Set(prev).add(id));
+    
     try {
       await apiClient.delete(`/analyses/${id}`);
-      setAnalyses(analyses.filter(a => a.id !== id));
-      addToast('Analysis deleted', 'info');
+      setAnalyses(prev => prev.filter(a => a.id !== id));
+      addToast('Analysis successfully purged', 'info');
     } catch (error) {
-      addToast('Failed to delete analysis', 'error');
+      console.error('Delete failed', error);
+      addToast('Critical: Failed to delete analysis', 'error');
+    } finally {
+      setDeletingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   };
 
@@ -71,6 +88,12 @@ export const HistoryPage: React.FC = () => {
         </div>
         
         <div className="flex flex-wrap items-center gap-6">
+          <button 
+            onClick={() => navigate('/upload')}
+            className="btn btn-primary px-10 py-5 text-[10px] font-black uppercase tracking-[0.4em] rounded-2xl flex items-center gap-4 shadow-panel-premium hover:scale-[1.02] transition-all"
+          >
+            <Zap size={18} className="fill-current" /> System Analysis
+          </button>
           <div className="flex glass p-1.5 border-white/5 rounded-xl bg-white/[0.02]">
             {(['all', 'excellent', 'good', 'moderate', 'poor', 'critical'] as const).map(band => (
               <button
@@ -149,7 +172,7 @@ export const HistoryPage: React.FC = () => {
                         } uppercase tracking-[0.2em]`}>
                           {item.status}
                         </span>
-                        <h3 className="text-2xl font-display font-black text-text-primary truncate uppercase tracking-tighter">
+                        <h3 className="text-xl md:text-2xl font-display font-black text-text-primary truncate uppercase tracking-tighter">
                           {item.simulation_preset} Scan
                         </h3>
                         {item.status === 'completed' && (
@@ -175,22 +198,27 @@ export const HistoryPage: React.FC = () => {
                       <p className="text-[9px] uppercase font-technical font-black text-text-muted tracking-[0.5em] opacity-20">Intelligence Rank</p>
                     </div>
 
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-500 pr-2 relative z-20">
+                    <div className="flex items-center gap-2 pr-2 relative z-20">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           copyToClipboard(`${window.location.origin}/results/${item.id}`);
                           addToast('Link copied to clipboard', 'info');
                         }}
-                        className="p-3 rounded-xl bg-white/5 border border-white/10 text-text-muted hover:text-text-primary hover:bg-white/10 transition-all"
+                        className="p-3 rounded-xl bg-white/5 border border-white/10 text-text-muted hover:text-text-primary hover:bg-white/10 transition-all opacity-0 group-hover:opacity-100"
                       >
-                        <ExternalLink size={20} />
+                        <ExternalLink size={18} />
                       </button>
                       <button 
                         onClick={(e) => handleDelete(e, item.id)}
-                        className="p-3 rounded-xl bg-white/5 border border-white/10 text-text-muted hover:text-white hover:bg-white/10 transition-all"
+                        disabled={deletingIds.has(item.id)}
+                        className={`p-3 rounded-xl bg-white/5 border border-white/10 text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-all ${deletingIds.has(item.id) ? 'opacity-100 cursor-wait' : 'opacity-0 group-hover:opacity-100'}`}
                       >
-                        <Trash2 size={20} />
+                        {deletingIds.has(item.id) ? (
+                          <div className="w-[18px] h-[18px] border-2 border-text-muted border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 size={18} />
+                        )}
                       </button>
                     </div>
                   </motion.div>

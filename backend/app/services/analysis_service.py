@@ -136,9 +136,13 @@ async def run_full_analysis(analysis_id: UUID, user_id: UUID | None = None) -> N
     """
     logger.info(f"Analysis job {analysis_id} starting processing.")
 
-    pool = get_pool()
+    # In a background thread (new loop), we MUST use a fresh connection, 
+    # as the global pool is bound to the main loop.
+    import asyncpg
+    from app.config import settings
+    conn = await asyncpg.connect(dsn=settings.database_url)
 
-    async with pool.acquire() as conn:
+    try:
         row = await conn.fetchrow(
             "SELECT user_id, wcag_level, simulation_preset, original_image_path FROM public.analyses WHERE id = $1",
             analysis_id,
@@ -157,37 +161,44 @@ async def run_full_analysis(analysis_id: UUID, user_id: UUID | None = None) -> N
             analysis_id,
         )
 
-    try:
         # ══ Step 1 — Pre-processing ══
-        logger.info(f"[{analysis_id}] Step 1: Downloading and pre-processing image")
+        logger.info(f"[{analysis_id}] Step 1: Starting Download from {original_path}")
         image_bytes = download_image_from_storage(original_path)
+        logger.info(f"[{analysis_id}] Step 1: Downloaded {len(image_bytes)} bytes. Loading image...")
         image = load_image_from_bytes(image_bytes)
+        logger.info(f"[{analysis_id}] Step 1: Loaded image. Resizing...")
         image = _resize_image(image, max_dim=1920)
+        logger.info(f"[{analysis_id}] Step 1: Resized image to {image.shape}")
 
         # Ensure BGR
         if len(image.shape) == 2:
             image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
 
         # ══ Step 2 — OCR on original image ══
-        logger.info(f"[{analysis_id}] Step 2: Running OCR on original image")
+        logger.info(f"[{analysis_id}] Step 2: Running OCR on original image (this can be slow)...")
         ocr_before = _run_ocr(image)
+        logger.info(f"[{analysis_id}] Step 2: OCR Original Complete. Text len: {len(ocr_before['text'])}")
 
         # ══ Step 3 — Squint Simulation ══
-        logger.info(f"[{analysis_id}] Step 3: Applying {simulation_preset} simulation")
+        logger.info(f"[{analysis_id}] Step 3: Applying {simulation_preset} simulation...")
         preset_params = SIMULATION_PRESETS.get(simulation_preset, SIMULATION_PRESETS["combined"])
         degraded_image = apply_squint_simulation(image, preset_params)
+        logger.info(f"[{analysis_id}] Step 3: Simulation applied. Converting to bytes...")
 
         # Upload degraded image to storage
         degraded_bytes = image_to_bytes(degraded_image, format="PNG")
+        logger.info(f"[{analysis_id}] Step 3: Uploading degraded image to storage...")
         degraded_path = await upload_degraded_image(
             user_id=actual_user_id,
             analysis_id=analysis_id,
             image_bytes=degraded_bytes,
         )
+        logger.info(f"[{analysis_id}] Step 3: Degraded image uploaded to {degraded_path}")
 
         # ══ Step 4 — OCR on degraded image ══
-        logger.info(f"[{analysis_id}] Step 4: Running OCR on degraded image")
+        logger.info(f"[{analysis_id}] Step 4: Running OCR on degraded image...")
         ocr_after = _run_ocr(degraded_image)
+        logger.info(f"[{analysis_id}] Step 4: OCR Degraded Complete. Text len: {len(ocr_after['text'])}")
         deltas = _compute_delta_metrics(ocr_before, ocr_after)
 
         # ══ Step 5 — Accessibility & Scoring ══
@@ -214,65 +225,65 @@ async def run_full_analysis(analysis_id: UUID, user_id: UUID | None = None) -> N
 
         # ══ Step 7 — Persist and Complete ══
         logger.info(f"[{analysis_id}] Step 7: Persisting results to database")
-        async with pool.acquire() as conn:
-            # Insert metrics
-            await conn.execute(
-                """
-                INSERT INTO public.analysis_metrics
-                (analysis_id, ocr_retention_rate, contrast_score, font_size_score,
-                 visual_clutter_score, color_accessibility_score, confidence_delta,
-                 ocr_text_before, ocr_text_after)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-                """,
-                analysis_id,
-                metrics["ocr_retention_rate"],
-                metrics["contrast_score"],
-                metrics["font_size_score"],
-                metrics["visual_clutter_score"],
-                metrics["color_accessibility_score"],
-                deltas["confidence_delta"],
-                ocr_before["text"][:10000],   # Truncate long text
-                ocr_after["text"][:10000],
-            )
+        
+        # Insert metrics
+        await conn.execute(
+            """
+            INSERT INTO public.analysis_metrics
+            (analysis_id, ocr_retention_rate, contrast_score, font_size_score,
+                visual_clutter_score, color_accessibility_score, confidence_delta,
+                ocr_text_before, ocr_text_after)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            """,
+            analysis_id,
+            metrics["ocr_retention_rate"],
+            metrics["contrast_score"],
+            metrics["font_size_score"],
+            metrics["visual_clutter_score"],
+            metrics["color_accessibility_score"],
+            deltas["confidence_delta"],
+            ocr_before["text"][:10000],   # Truncate long text
+            ocr_after["text"][:10000],
+        )
 
-            # Insert suggestions
-            if suggestions:
-                records = [
-                    (
-                        analysis_id,
-                        s["severity"],
-                        s.get("suggestion_text", ""),
-                        s.get("suggestion_text", ""),  # also store in 'suggestion' column
-                        s.get("expected_score_lift", 0.0),
-                        s.get("dimension", ""),
-                        s.get("rank", i + 1),
-                    )
-                    for i, s in enumerate(suggestions)
-                ]
-                await conn.executemany(
-                    """
-                    INSERT INTO public.suggestions
-                    (analysis_id, severity, suggestion_text, suggestion, expected_lift, dimension, rank)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7)
-                    """,
-                    records,
+        # Insert suggestions
+        if suggestions:
+            records = [
+                (
+                    analysis_id,
+                    s["severity"],
+                    s.get("suggestion_text", ""),
+                    s.get("suggestion_text", ""),  # also store in 'suggestion' column
+                    s.get("expected_score_lift", 0.0),
+                    s.get("dimension", ""),
+                    s.get("rank", i + 1),
                 )
-
-            # Update root analysis record
-            await conn.execute(
+                for i, s in enumerate(suggestions)
+            ]
+            await conn.executemany(
                 """
-                UPDATE public.analyses
-                SET status = 'completed',
-                    squint_score = $1,
-                    squint_band = $2,
-                    degraded_image_path = $3
-                WHERE id = $4
+                INSERT INTO public.suggestions
+                (analysis_id, severity, suggestion_text, suggestion, expected_lift, dimension, rank)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 """,
-                score,
-                band,
-                degraded_path,
-                analysis_id,
+                records,
             )
+
+        # Update root analysis record
+        await conn.execute(
+            """
+            UPDATE public.analyses
+            SET status = 'completed',
+                squint_score = $1,
+                squint_band = $2,
+                degraded_image_path = $3
+            WHERE id = $4
+            """,
+            score,
+            band,
+            degraded_path,
+            analysis_id,
+        )
 
         logger.info(
             f"Analysis job {analysis_id} completed with score {score} ({band}) "
@@ -282,9 +293,10 @@ async def run_full_analysis(analysis_id: UUID, user_id: UUID | None = None) -> N
     except Exception as e:
         logger.error(f"Analysis job {analysis_id} failed: {e}", exc_info=True)
         error_msg = str(e)
-        async with pool.acquire() as conn:
-            await conn.execute(
-                "UPDATE public.analyses SET status = 'failed', error_reason = $1 WHERE id = $2",
-                error_msg[:255],
-                analysis_id,
-            )
+        await conn.execute(
+            "UPDATE public.analyses SET status = 'failed', error_reason = $1 WHERE id = $2",
+            error_msg[:255],
+            analysis_id,
+        )
+    finally:
+        await conn.close()
