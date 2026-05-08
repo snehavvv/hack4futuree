@@ -53,8 +53,6 @@ yarn-error.log*
 
 # Android / Mobile Build
 .gradle/
-gradle/
-app/
 local.properties
 *.apk
 output-metadata.json
